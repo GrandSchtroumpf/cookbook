@@ -27,7 +27,7 @@
     "qwik": "qwik"
   },
   "devDependencies": {
-    "@builder.io/qwik": "^1.9.1",
+    "@builder.io/qwik": "https://pkg.pr.new/@builder.io/qwik@6960",
     "@builder.io/qwik-city": "^1.9.1",
     "@types/eslint": "8.56.10",
     "@types/node": "20.14.11",
@@ -35,7 +35,9 @@
     "@typescript-eslint/parser": "7.16.1",
     "eslint": "8.57.0",
     "eslint-plugin-qwik": "^1.9.1",
+    "idb": "^8.0.0",
     "prettier": "3.3.3",
+    "qwik-hueeye": "0.0.19",
     "typescript": "5.4.5",
     "undici": "*",
     "vite": "5.3.5",

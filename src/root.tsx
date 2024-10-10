@@ -8,6 +8,7 @@ import { RouterHead } from "./components/router-head/router-head";
 import { isDev } from "@builder.io/qwik/build";
 
 import "./global.css";
+import { HueEyeProvider } from "qwik-hueeye";
 
 export default component$(() => {
   /**
@@ -30,7 +31,9 @@ export default component$(() => {
         <RouterHead />
       </head>
       <body lang="en">
-        <RouterOutlet />
+        <HueEyeProvider>
+          <RouterOutlet />
+        </HueEyeProvider>
         {!isDev && <ServiceWorkerRegister />}
       </body>
     </QwikCityProvider>

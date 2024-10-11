@@ -1,18 +1,18 @@
 import { $, component$, useStore, unwrapProxy } from "@builder.io/qwik";
 import { AddControl, Form, FormField, GroupController, Input, Label, ListController, MatIcon, RemoveControl } from 'qwik-hueeye';
-import { getDB } from "~/services/db";
+import { useIDB } from "~/services/db";
 import type { Ingredient } from "~/services/ingredient";
 
 type CreateIngredient = Omit<Ingredient, 'id'>;
 
 export default component$(() => {
+  const { add } = useIDB();
   const ingredient = useStore<CreateIngredient>({
     name: '',
     weights: [],
   });
-  const create = $(async () => {
-    const db = await getDB();
-    await db.add('ingredients', unwrapProxy(ingredient) as Ingredient);
+  const create = $(() => {
+    return add('ingredients', unwrapProxy(ingredient) as Ingredient);
   });
   return (
     <Form bind:value={ingredient} onSubmit$={create}>

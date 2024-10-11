@@ -74,7 +74,7 @@ function getStoreKey<Name extends StoreNames<DB>>(params: StoreKeyParams<Name>) 
 }
 
 export function useIDBProvider() {
-  const store: Record<string, any> = {};
+  const cache: Record<string, any> = {};
   const listeners: Record<string, number> = {};
   const container: { db?: NoSerialize<Promise<IDBPDatabase<DB>>> } = {};
   const getIDB = $(() => {
@@ -83,14 +83,13 @@ export function useIDBProvider() {
   });
 
   const invalidate = $((changes: StoreChange<any>) => {
-    for (const [key, value] of Object.entries(listeners)) {
-      if (value !== 0) continue;
+    for (const key in cache) {
       const search = new URLSearchParams(key);
       const name = JSON.parse(search.get('name')!);
       if (name !== changes.storeName) continue;
       const query = JSON.parse(search.get('query') ?? 'null');
       if (typeof query !== 'object' && changes.key !== query) continue;
-      delete store[key]; 
+      delete cache[key]; 
     }
   })
 
@@ -100,10 +99,10 @@ export function useIDBProvider() {
     query: StoreKey<DB, Name>
   ) => {
     const key = getStoreKey({ name, query });
-    if (store[key]) return store[key];
+    if (cache[key]) return cache[key];
     const db = await getIDB();
     const result = await db.get(name, query);
-    store[key] = result;
+    cache[key] = result;
     return result;
   });
 
@@ -113,10 +112,10 @@ export function useIDBProvider() {
     count?: number
   ) => {
     const key = getStoreKey({ name, query, count });
-    if (store[key]) return store[key];
+    if (cache[key]) return cache[key];
     const db = await getIDB();
     const result = await db.getAll(name, query, count);
-    store[key] = result;
+    cache[key] = result;
     return result;
   });
 
@@ -129,8 +128,8 @@ export function useIDBProvider() {
     const db = await getIDB();
     const id = await db.add(name, value, key);
     const event = new IDBChangeEvent('add', name, value, id);
+    await invalidate(event.detail);
     db.dispatchEvent(event);
-    invalidate(event.detail);
     return id;
   });
 
@@ -154,21 +153,22 @@ export function useIDBProvider() {
       }
     }
   });
-  const ctx = { getIDB, get, getAll, add, listen };
+  const ctx = { getIDB, cache, get, getAll, add, listen };
   useContextProvider(IDBContext, ctx);
   return ctx;
 }
 
-const useIDB = () => useContext(IDBContext);
+export const useIDB = () => useContext(IDBContext);
 
 
 export const useGetStore = <Name extends StoreNames<DB>>(
   name: Name,
   query: StoreKey<DB, Name>
 ) => {
-  const { get, listen } = useIDB();
-  const loading = useSignal(true);
-  const result = useSignal<StoreValue<DB, Name>>();
+  const { cache, get, listen } = useIDB();
+  const init = cache[getStoreKey({ name, query })];
+  const loading = useSignal(!init);
+  const result = useSignal<StoreValue<DB, Name>>(init);
   const error = useSignal<string>();
   const update = $(async() => {
     try {
@@ -193,14 +193,15 @@ export const useGetAllStore = <Name extends StoreNames<DB>>(
   query?: StoreKey<DB, Name> | IDBKeyRange,
   count?: number,
 ) => {
-  const { getAll, listen } = useIDB();
+  const { cache, getAll, listen } = useIDB();
   const _query = typeof query === 'object' ? noSerialize(query) : query;
-  const loading = useSignal(true);
-  const result = useSignal<StoreValue<DB, Name>[]>();
+  const init = cache[getStoreKey({ name, query, count })];
+  const loading = useSignal(!init);
+  const list = useSignal<StoreValue<DB, Name>[]>(init);
   const error = useSignal<string>();
   const update = $(async () => {
     try {
-      result.value = await getAll(name, _query, count);
+      list.value = await getAll(name, _query, count);
     } catch (err) {
       error.value = err as string;
     } finally {
@@ -211,10 +212,10 @@ export const useGetAllStore = <Name extends StoreNames<DB>>(
     update();
     return listen({ name, query: _query, count }, (event) => {
       const { key } = event.detail;
-      if (typeof _query === 'object' && !_query.includes(key)) return;
-      update();
+      if (!_query) return update();
+      if (typeof _query === 'object' && _query.includes(key)) return update();
     });
   });
-  return { loading, result, error };
+  return { loading, list, error };
 }
 

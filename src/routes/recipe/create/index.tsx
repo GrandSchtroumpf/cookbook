@@ -9,7 +9,7 @@ export default component$(() => {
     ingredients: [],
   });
 
-  const { result: ingredientList } = useGetAllStore('ingredients');
+  const { list: ingredientList } = useGetAllStore('ingredients');
 
   const hanleSubmit = $(async () => {
     const db = await getDB();

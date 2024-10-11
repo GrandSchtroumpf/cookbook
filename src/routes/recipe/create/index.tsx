@@ -1,7 +1,6 @@
-import { component$, useSignal, useVisibleTask$, $, useStore, unwrapProxy } from "@builder.io/qwik";
+import { component$, $, useStore, unwrapProxy } from "@builder.io/qwik";
 import { AddControl, Form, FormField, GroupController, Input, Label, ListController, Option, Select } from "qwik-hueeye";
-import { getDB } from "~/services/db";
-import type { Ingredient } from "~/services/ingredient";
+import { getDB, useGetAllStore } from "~/services/db";
 import type { Recipe } from "~/services/recipe";
 
 export default component$(() => {
@@ -10,16 +9,7 @@ export default component$(() => {
     ingredients: [],
   });
 
-  const getIngredientList = $(async () => {
-    const db = await getDB();
-    return db.getAll("ingredients");
-  });
-
-  const ingredientList = useSignal<Ingredient[]>([]);
-
-  useVisibleTask$(async () => {
-    ingredientList.value = await getIngredientList();
-  });
+  const { result: ingredientList } = useGetAllStore('ingredients');
 
   const hanleSubmit = $(async () => {
     const db = await getDB();
@@ -34,7 +24,9 @@ export default component$(() => {
       </FormField>
 
       <ListController name="ingredients">
-        <AddControl item={{ id: 0, label: "", amount: 0 }}>Ajouter un ingrédient</AddControl>
+        <AddControl class="he-btn outline primary" item={{ id: 0, label: "", amount: 0 }}>
+          Ajouter un ingrédient
+        </AddControl>
         <ul>
           {recipe.ingredients.map((ingredient, i) => (
             <li key={ingredient.id}>
@@ -42,9 +34,7 @@ export default component$(() => {
                 <FormField>
                   <Label>Choisir un ingredient</Label>
                   <Select name="id">
-                    {ingredientList.value.map(({ id, name }) => (
-                      <Option key={id} value={id}>{name}</Option>
-                    ))}
+                    {ingredientList.value!.map(({ id, name }) => <Option key={id} value={id}>{name}</Option>)}
                   </Select>
                 </FormField>
                 <FormField>

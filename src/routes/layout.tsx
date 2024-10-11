@@ -1,6 +1,7 @@
 import { component$, Slot } from "@builder.io/qwik";
 import type { RequestHandler } from "@builder.io/qwik-city";
 import { LinkItem, NavList } from "qwik-hueeye";
+import { useIDBProvider } from "~/services/db";
 
 export const onGet: RequestHandler = async ({ cacheControl }) => {
   // Control caching for this request for best performance and to reduce hosting costs:
@@ -14,10 +15,11 @@ export const onGet: RequestHandler = async ({ cacheControl }) => {
 };
 
 export default component$(() => {
+  useIDBProvider();
   return (
     <>
       <header>
-        <NavList>
+        <NavList aria-orientation="horizontal">
           <LinkItem href="/ingredient/list">Ingrédient</LinkItem>
           <LinkItem href="/ingredient/create">Crée ton ingrédient</LinkItem>
           <LinkItem href="/recipe/create">Crée ta recette</LinkItem>

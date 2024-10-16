@@ -1,20 +1,22 @@
-import { component$, $, useStore, unwrapProxy } from "@builder.io/qwik";
-import { AddControl, Form, FormField, GroupController, Input, Label, ListController, Option, Select } from "qwik-hueeye";
-import { getDB, useGetAllStore } from "~/services/db";
+import type { QRL} from "@builder.io/qwik";
+import { component$, $, useStore, unwrapProxy, useSignal } from "@builder.io/qwik";
+import { Form, FormField, GroupController, Input, Label, ListController, Autocomplete } from "qwik-hueeye";
+import { useGetAllStore, useIDB } from "~/services/db";
 import type { Recipe } from "~/services/recipe";
 
+
 export default component$(() => {
+  const { add } = useIDB();
   const recipe = useStore<Recipe>({
     name: "",
     ingredients: [],
   });
 
   const { list: ingredientList } = useGetAllStore('ingredients');
+  const ingredientRecord = Object.fromEntries(ingredientList.value.map(i => ([i.id, i])));
 
-  const hanleSubmit = $(async () => {
-    const db = await getDB();
-    db.add("recipe", unwrapProxy(recipe));
-  });
+  const hanleSubmit = $(() => add("recipe", unwrapProxy(recipe)));
+  const selectIngredient = $((id: number) => recipe.ingredients.push({id, amount: 0, label: ""}));
 
   return (
     <Form bind:value={recipe} onSubmit$={hanleSubmit}>
@@ -23,20 +25,14 @@ export default component$(() => {
         <Input name="name" required class="fill" />
       </FormField>
 
+      <SelectIngredient onSelect$={selectIngredient} />
+
       <ListController name="ingredients">
-        <AddControl class="he-btn outline primary" item={{ id: 0, label: "", amount: 0 }}>
-          Ajouter un ingrédient
-        </AddControl>
         <ul>
           {recipe.ingredients.map((ingredient, i) => (
             <li key={ingredient.id}>
               <GroupController name={i}>
-                <FormField>
-                  <Label>Choisir un ingredient</Label>
-                  <Select name="id">
-                    {ingredientList.value!.map(({ id, name }) => <Option key={id} value={id}>{name}</Option>)}
-                  </Select>
-                </FormField>
+               <p>{ingredientRecord[ingredient.id].name}</p>
                 <FormField>
                   <Label>Choisir une quantité</Label>
                   <Input type="number" name="amount" />
@@ -50,3 +46,36 @@ export default component$(() => {
     </Form>
   );
 });
+
+
+interface Props {
+  onSelect$: QRL<(id: number) => void>
+}
+export const SelectIngredient = component$<Props>(({ onSelect$ }) => {
+  const panel = useSignal<HTMLDivElement>();
+  const { list, loading } = useGetAllStore('ingredients');
+
+  const select = $((id: number) => {
+    panel.value?.hidePopover();
+    onSelect$(id);
+  })
+
+  return (
+    <Autocomplete.Root>
+      <Autocomplete.Input/>
+      <Autocomplete.Panel ref={panel} >
+        <Autocomplete.Listbox>
+          {loading.value ? (
+            <Autocomplete.Option>Empty</Autocomplete.Option>
+          ) : (
+            list.value.map(({ id, name }) => (
+              <Autocomplete.Option key={id} onClick$={() => select(id)}>
+                {name}
+              </Autocomplete.Option>
+            ))
+          )}
+        </Autocomplete.Listbox>
+      </Autocomplete.Panel>
+    </Autocomplete.Root>
+  )
+})

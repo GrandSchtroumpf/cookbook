@@ -197,7 +197,7 @@ export const useGetAllStore = <Name extends StoreNames<DB>>(
   const _query = typeof query === 'object' ? noSerialize(query) : query;
   const init = cache[getStoreKey({ name, query, count })];
   const loading = useSignal(!init);
-  const list = useSignal<StoreValue<DB, Name>[]>(init);
+  const list = useSignal<StoreValue<DB, Name>[]>(init ?? []);
   const error = useSignal<string>();
   const update = $(async () => {
     try {

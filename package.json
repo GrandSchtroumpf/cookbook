@@ -37,7 +37,7 @@
     "eslint-plugin-qwik": "^1.9.1",
     "idb": "^8.0.0",
     "prettier": "3.3.3",
-    "qwik-hueeye": "0.0.19",
+    "qwik-hueeye": "0.0.20",
     "typescript": "5.4.5",
     "undici": "*",
     "vite": "5.3.5",

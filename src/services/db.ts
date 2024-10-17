@@ -3,7 +3,8 @@ import type { DBSchema, IDBPDatabase, StoreKey, StoreNames, StoreValue } from 'i
 import type { Ingredient } from './ingredient';
 import type { Recipe } from './recipe';
 import type { NoSerialize} from '@builder.io/qwik';
-import { $, createContextId, noSerialize, useContext, useContextProvider, useSignal, useVisibleTask$ } from '@builder.io/qwik';
+import { $, noSerialize, useSignal, useVisibleTask$ } from '@builder.io/qwik';
+import type { Menu } from './menu';
 
 interface DB extends DBSchema {
   ingredients: {
@@ -13,24 +14,30 @@ interface DB extends DBSchema {
   recipe:{
     key: number;
     value: Recipe;
+  };
+  menu:{
+    key: number;
+    value: Menu;
   }
 }
 
 export async function getDB() {
-  return openDB<DB>('cookbook', 2, {
-    upgrade: (db, oldVersion) => {
-      if (oldVersion < 1) {
-        db.createObjectStore('ingredients', {
-          keyPath: 'id',
-          autoIncrement: true,
-        });
-      }
-      if (oldVersion < 2) {
-        db.createObjectStore("recipe", {
-          keyPath: "id",
-          autoIncrement: true,
-        });
-      }
+  return openDB<DB>('cookbook', 4, {
+    upgrade: (db) => {
+      db.createObjectStore('ingredients', {
+        keyPath: 'id',
+        autoIncrement: true,
+      });
+    
+      db.createObjectStore("recipe", {
+        keyPath: "id",
+        autoIncrement: true,
+      });
+    
+      db.createObjectStore("menu", {
+        keyPath: "id",
+        autoIncrement: true,
+      });
     }
   });
 }
@@ -57,8 +64,6 @@ class IDBChangeEvent<Name extends StoreNames<DB>> extends CustomEvent<StoreChang
 }
 
 
-const IDBContext = createContextId<ReturnType<typeof useIDBProvider>>('IDBContext');
-
 interface StoreKeyParams<Name extends StoreNames<DB>> {
   name: Name;
   query?: StoreKey<DB, Name> | IDBKeyRange | null;
@@ -73,99 +78,86 @@ function getStoreKey<Name extends StoreNames<DB>>(params: StoreKeyParams<Name>) 
   return search.toString();
 }
 
-export function useIDBProvider() {
-  const cache: Record<string, any> = {};
-  const listeners: Record<string, number> = {};
-  const container: { db?: NoSerialize<Promise<IDBPDatabase<DB>>> } = {};
-  const getIDB = $(() => {
-    container.db ||= noSerialize(getDB());
-    return container.db!;
-  });
+const cache: Record<string, any> = {};
+const listeners: Record<string, number> = {};
+const container: { db?: NoSerialize<Promise<IDBPDatabase<DB>>> } = {};
+const getIDB = $(() => {
+  container.db ||= noSerialize(getDB());
+  return container.db!;
+});
 
-  const invalidate = $((changes: StoreChange<any>) => {
-    for (const key in cache) {
-      const search = new URLSearchParams(key);
-      const name = JSON.parse(search.get('name')!);
-      if (name !== changes.storeName) continue;
-      const query = JSON.parse(search.get('query') ?? 'null');
-      if (typeof query !== 'object' && changes.key !== query) continue;
-      delete cache[key]; 
-    }
-  })
+const invalidate = $((changes: StoreChange<any>) => {
+  for (const key in cache) {
+    const search = new URLSearchParams(key);
+    const name = JSON.parse(search.get('name')!);
+    if (name !== changes.storeName) continue;
+    const query = JSON.parse(search.get('query') ?? 'null');
+    if (typeof query !== 'object' && changes.key !== query) continue;
+    delete cache[key]; 
+  }
+})
 
-  /** READ */
-  const get = $(async <Name extends StoreNames<DB>>(
-    name: Name,
-    query: StoreKey<DB, Name>
-  ) => {
-    const key = getStoreKey({ name, query });
-    if (cache[key]) return cache[key];
-    const db = await getIDB();
-    const result = await db.get(name, query);
-    cache[key] = result;
-    return result;
-  });
+/** READ */
+export const get = $(async <Name extends StoreNames<DB>>(
+  name: Name,
+  query: StoreKey<DB, Name>
+) => {
+  const key = getStoreKey({ name, query });
+  if (cache[key]) return cache[key];
+  const db = await getIDB();
+  const result = await db.get(name, query);
+  cache[key] = result;
+  return result;
+});
 
-  const getAll = $(async <Name extends StoreNames<DB>>(
-    name: Name,
-    query?: StoreKey<DB, Name> | IDBKeyRange | null,
-    count?: number
-  ) => {
-    const key = getStoreKey({ name, query, count });
-    if (cache[key]) return cache[key];
-    const db = await getIDB();
-    const result = await db.getAll(name, query, count);
-    cache[key] = result;
-    return result;
-  });
+export const getAll = $(async <Name extends StoreNames<DB>>(
+  name: Name,
+  query?: StoreKey<DB, Name> | IDBKeyRange | null,
+  count?: number
+) => {
+  const key = getStoreKey({ name, query, count });
+  if (cache[key]) return cache[key];
+  const db = await getIDB();
+  const result = await db.getAll(name, query, count);
+  cache[key] = result;
+  return result;
+});
 
-  /** WRITE */
-  const add = $(async <Name extends StoreNames<DB>>(
-    name: Name,
-    value: StoreValue<DB, Name>,
-    key?: StoreKey<DB, Name> | IDBKeyRange
-  ) => {
-    const db = await getIDB();
-    const id = await db.add(name, value, key);
-    const event = new IDBChangeEvent('add', name, value, id);
-    await invalidate(event.detail);
-    db.dispatchEvent(event);
-    return id;
-  });
+/** WRITE */
+export const add = $(async <Name extends StoreNames<DB>>(
+  name: Name,
+  value: Omit<StoreValue<DB, Name>, 'id'>,
+  key?: StoreKey<DB, Name> | IDBKeyRange
+) => {
+  const db = await getIDB();
+  const id = await db.add(name, value as any, key);
+  const event = new IDBChangeEvent('add', name, value as any, id);
+  await invalidate(event.detail);
+  db.dispatchEvent(event);
+  return id;
+});
 
-  /** LISTEN */
-  const listen = $(async <Name extends StoreNames<DB>>(
-    params: StoreKeyParams<Name>,
-    cb: (event: CustomEvent<StoreChange<Name>>) => void
-  ) => {
-    const key = getStoreKey(params);
-    listeners[key] ||= 0;
-    listeners[key]++;
-    if (listeners[key] === 1) {
-      const db = await getIDB();
-      db.addEventListener(changeEvent(params.name), cb as (event: Event) => void);
-    }
-    return async () => {
-      listeners[key]--;
-      if (listeners[key] === 0) {
-        const db = await getIDB();
-        db.removeEventListener(changeEvent(params.name), cb as (event: Event) => void);
-      }
-    }
-  });
-  const ctx = { getIDB, cache, get, getAll, add, listen };
-  useContextProvider(IDBContext, ctx);
-  return ctx;
-}
-
-export const useIDB = () => useContext(IDBContext);
+/** LISTEN */
+export const listen = $(async <Name extends StoreNames<DB>>(
+  params: StoreKeyParams<Name>,
+  cb: (event: CustomEvent<StoreChange<Name>>) => void
+) => {
+  const key = getStoreKey(params);
+  listeners[key] ||= 0;
+  listeners[key]++;
+  const db = await getIDB();
+  db.addEventListener(changeEvent(params.name), cb as (event: Event) => void);
+  return async () => {
+    listeners[key]--;
+    db.removeEventListener(changeEvent(params.name), cb as (event: Event) => void);
+  }
+});
 
 
 export const useGetStore = <Name extends StoreNames<DB>>(
   name: Name,
   query: StoreKey<DB, Name>
 ) => {
-  const { cache, get, listen } = useIDB();
   const init = cache[getStoreKey({ name, query })];
   const loading = useSignal(!init);
   const result = useSignal<StoreValue<DB, Name>>(init);
@@ -179,6 +171,7 @@ export const useGetStore = <Name extends StoreNames<DB>>(
       loading.value = false;
     }
   });
+  // eslint-disable-next-line qwik/no-use-visible-task
   useVisibleTask$(async () => {
     update();
     return listen({ name, query }, (event) => {
@@ -193,7 +186,6 @@ export const useGetAllStore = <Name extends StoreNames<DB>>(
   query?: StoreKey<DB, Name> | IDBKeyRange,
   count?: number,
 ) => {
-  const { cache, getAll, listen } = useIDB();
   const _query = typeof query === 'object' ? noSerialize(query) : query;
   const init = cache[getStoreKey({ name, query, count })];
   const loading = useSignal(!init);
@@ -208,6 +200,7 @@ export const useGetAllStore = <Name extends StoreNames<DB>>(
       loading.value = false;
     }
   });
+  // eslint-disable-next-line qwik/no-use-visible-task
   useVisibleTask$(async () => {
     update();
     return listen({ name, query: _query, count }, (event) => {

@@ -1,13 +1,13 @@
 import type { QRL} from "@builder.io/qwik";
-import { component$, $, useStore, unwrapProxy, useSignal } from "@builder.io/qwik";
+import { component$, $, useStore, unwrapStore, useSignal } from "@builder.io/qwik";
 import { Form, FormField, GroupController, Input, Label, ListController, Autocomplete } from "qwik-hueeye";
-import { useGetAllStore, useIDB } from "~/services/db";
+import { useGetAllStore, add } from "~/services/db";
 import type { Recipe } from "~/services/recipe";
 
+type CreateRecipe = Omit<Recipe, "id">;
 
 export default component$(() => {
-  const { add } = useIDB();
-  const recipe = useStore<Recipe>({
+  const recipe = useStore<CreateRecipe>({
     name: "",
     ingredients: [],
   });
@@ -15,7 +15,7 @@ export default component$(() => {
   const { list: ingredientList } = useGetAllStore('ingredients');
   const ingredientRecord = Object.fromEntries(ingredientList.value.map(i => ([i.id, i])));
 
-  const hanleSubmit = $(() => add("recipe", unwrapProxy(recipe)));
+  const hanleSubmit = $(() => add("recipe", unwrapStore(recipe)));
   const selectIngredient = $((id: number) => recipe.ingredients.push({id, amount: 0, label: ""}));
 
   return (

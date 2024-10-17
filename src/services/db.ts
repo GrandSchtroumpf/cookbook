@@ -130,8 +130,8 @@ export const add = $(async <Name extends StoreNames<DB>>(
   key?: StoreKey<DB, Name> | IDBKeyRange
 ) => {
   const db = await getIDB();
-  const id = await db.add(name, value as any, key);
-  const event = new IDBChangeEvent('add', name, value as any, id);
+  const id = await db.add(name, value as StoreValue<DB, Name>, key);
+  const event = new IDBChangeEvent('add', name, value as StoreValue<DB, Name>, id);
   await invalidate(event.detail);
   db.dispatchEvent(event);
   return id;

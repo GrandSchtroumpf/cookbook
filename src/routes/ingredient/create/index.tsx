@@ -1,5 +1,5 @@
 import { $, component$, useStore, unwrapStore } from "@builder.io/qwik";
-import { AddControl, Form, FormField, GroupController, Input, Label, ListController, MatIcon, RemoveControl } from 'qwik-hueeye';
+import { AddControl, Form, FormField, GroupController, Input, Label, ListController, MatIcon, RemoveControl, useListControl } from 'qwik-hueeye';
 import { add } from "~/services/db";
 import type { Ingredient } from "~/services/ingredient";
 
@@ -20,22 +20,7 @@ export default component$(() => {
         <Input name="name" placeholder="Name" required class="fill"/>
       </FormField>
       <ListController name="weights">
-        <AddControl class="he-btn primary" item={{ label: '', gram: 1 }}>
-          Ajouter un type de poids
-        </AddControl>
-        <ul>
-          {ingredient.weights.map((_, i) => (
-            <GroupController key={JSON.stringify(_)} name={i}>
-              <li>
-                <Input name="label" required />
-                <Input name="gram" type="number" required />
-                <RemoveControl index={i} class="he-btn-icon">
-                  <MatIcon name="close" />
-                </RemoveControl>
-              </li>
-            </GroupController>
-          ))}
-        </ul>
+        <WeightTable />
       </ListController>
       <footer>
         <button type="reset" class="he-btn">Reset</button>
@@ -46,3 +31,46 @@ export default component$(() => {
     </Form>
   )
 });
+
+const WeightTable = component$(() => {
+  const { list } = useListControl();
+  if (!list.value.length) return (
+    <AddControl class="he-btn primary" item={{ label: '', gram: 0 }}>
+      Ajouter un type de poids
+    </AddControl>
+  );
+  return (
+    <table>
+      <thead>
+        <tr>
+          <th id="head-label">Label</th>
+          <th id="head-gram">Grammes</th>
+          <th>
+          <AddControl class="he-btn-icon tooltip primary" aria-description="Ajouter un poids" item={{ label: '', gram: 0 }}>
+            <MatIcon name="add" />
+          </AddControl>
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        {list.value.map((_, i) => (
+          <tr key={JSON.stringify(_)}>
+            <GroupController name={i}>
+              <td>
+                <Input name="label" required aria-labelledby="head-label"/>
+              </td>
+              <td>
+                <Input name="gram" type="number" min="0" required aria-labelledby="head-gram" />
+              </td>
+              <td>
+                <RemoveControl index={i} class="he-btn-icon">
+                  <MatIcon name="close" />
+                </RemoveControl>
+              </td>
+            </GroupController>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  )
+})

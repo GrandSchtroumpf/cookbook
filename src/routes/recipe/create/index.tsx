@@ -10,6 +10,7 @@ export default component$(() => {
   const recipe = useStore<CreateRecipe>({
     name: "",
     ingredients: [],
+    servings: 0,
   });
 
   const { list: ingredientList } = useGetAllStore('ingredients');
@@ -22,10 +23,18 @@ export default component$(() => {
     <Form bind:value={recipe} onSubmit$={hanleSubmit}>
       <FormField>
         <Label>Nom de la recette</Label>
-        <Input name="name" required class="fill" />
+        <Input name="name" required class="fill" placeholder="Ratatouille"/>
       </FormField>
 
+      <FormField>
+        <Label>Nombre de personnes</Label>
+        <Input type="number" name="servings" required placeholder="4"/>
+      </FormField>
+
+    <FormField>
+      <Label>Choisir un ingrédient</Label>
       <SelectIngredient onSelect$={selectIngredient} />
+    </FormField>
 
       <ListController name="ingredients">
         <ul>
@@ -62,7 +71,7 @@ export const SelectIngredient = component$<Props>(({ onSelect$ }) => {
 
   return (
     <Autocomplete.Root>
-      <Autocomplete.Input/>
+      <Autocomplete.Input placeholder="Aubergine"/>
       <Autocomplete.Panel ref={panel} >
         <Autocomplete.Listbox>
           {loading.value ? (

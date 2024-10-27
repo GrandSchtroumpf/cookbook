@@ -57,10 +57,10 @@ const WeightTable = component$(() => {
           <tr key={JSON.stringify(_)}>
             <GroupController name={i}>
               <td>
-                <Input name="label" required aria-labelledby="head-label"/>
+                <Input name="label" placeholder="Label" required aria-labelledby="head-label"/>
               </td>
               <td>
-                <Input name="gram" type="number" min="0" required aria-labelledby="head-gram" />
+                <Input name="gram" placeholder="Gramme" type="number" min="0" required aria-labelledby="head-gram" />
               </td>
               <td>
                 <RemoveControl index={i} class="he-btn-icon">

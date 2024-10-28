@@ -1,0 +1,19 @@
+.ingredient-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: var(--size-2);
+  margin-block: 0;
+  padding: 0;
+  list-style: none;
+}
+.ingredient-list li {
+  background-color: var(--surface-1);
+  border-radius: var(--size-1);
+  padding: var(--size-2) var(--size-1);
+  animation: slideup 0.2s var(--ease-out);
+}
+.ingredient-list li header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}

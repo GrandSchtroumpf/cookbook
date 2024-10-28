@@ -39,8 +39,8 @@ importers:
         specifier: 3.3.3
         version: 3.3.3
       qwik-hueeye:
-        specifier: 0.0.20
-        version: 0.0.20(@builder.io/qwik-city@1.9.1(@types/node@20.14.11)(rollup@4.24.0)(typescript@5.4.5))(@builder.io/qwik@https://pkg.pr.new/@builder.io/qwik@6960(@types/node@20.14.11))
+        specifier: 0.0.22
+        version: 0.0.22(@builder.io/qwik-city@1.9.1(@types/node@20.14.11)(rollup@4.24.0)(typescript@5.4.5))(@builder.io/qwik@https://pkg.pr.new/@builder.io/qwik@6960(@types/node@20.14.11))
       typescript:
         specifier: 5.4.5
         version: 5.4.5
@@ -1413,9 +1413,9 @@ packages:
   queue-microtask@1.2.3:
     resolution: {integrity: sha512-NuaNSa6flKT5JaSYQzJok04JzTL1CA6aGhv5rfLW3PgqA+M2ChpZQnAC8h8i4ZFkBS8X5RqkDBHA7r4hej3K9A==}
 
-  qwik-hueeye@0.0.20:
-    resolution: {integrity: sha512-JggetZnnpGoMZf9KKBNalCE1GZG96uRP3T8IHmL0ZYl5KSLBMHmxhTQeQUHdFQIghlvpKhqz95cvrEoxDlBPxA==}
-    version: 0.0.20
+  qwik-hueeye@0.0.22:
+    resolution: {integrity: sha512-XdVuD0iaGJXI07g+oLwSGCPLtrvlBSEt5FGvpgDSToWlkm8iCTOY6XQ4Ii5tAVms5Xro62sVYzKbKni+tBKUyw==}
+    version: 0.0.22
     engines: {node: '>=15.0.0'}
     peerDependencies:
       '@builder.io/qwik': '>1.5.0'
@@ -3374,7 +3374,7 @@ snapshots:
 
   queue-microtask@1.2.3: {}
 
-  qwik-hueeye@0.0.20(@builder.io/qwik-city@1.9.1(@types/node@20.14.11)(rollup@4.24.0)(typescript@5.4.5))(@builder.io/qwik@https://pkg.pr.new/@builder.io/qwik@6960(@types/node@20.14.11)):
+  qwik-hueeye@0.0.22(@builder.io/qwik-city@1.9.1(@types/node@20.14.11)(rollup@4.24.0)(typescript@5.4.5))(@builder.io/qwik@https://pkg.pr.new/@builder.io/qwik@6960(@types/node@20.14.11)):
     dependencies:
       '@builder.io/qwik': https://pkg.pr.new/@builder.io/qwik@6960(@types/node@20.14.11)
       '@builder.io/qwik-city': 1.9.1(@types/node@20.14.11)(rollup@4.24.0)(typescript@5.4.5)

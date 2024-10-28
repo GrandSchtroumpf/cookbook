@@ -1,7 +1,9 @@
-import { component$, Slot } from "@builder.io/qwik";
+import { component$, Slot, useStylesScoped$ } from "@builder.io/qwik";
 import { LinkItem, NavList } from "qwik-hueeye";
+import style from './layout.css?inline';
 
 export default component$(() => {
+  useStylesScoped$(style);
   return (
     <>
       <header>
@@ -13,7 +15,7 @@ export default component$(() => {
           <LinkItem href="/menu/create">Crée ton menu</LinkItem>
         </NavList>
       </header>
-      <main>
+      <main class="main">
         <Slot />
       </main>
     </>

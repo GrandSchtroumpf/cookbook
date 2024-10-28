@@ -1,17 +1,20 @@
 import { $, component$, useStore, unwrapStore } from "@builder.io/qwik";
+import { useNavigate } from "@builder.io/qwik-city";
 import { AddControl, Form, FormField, GroupController, Input, Label, ListController, MatIcon, RemoveControl, useListControl } from 'qwik-hueeye';
-import { add } from "~/services/db";
+import { store } from "~/services/db";
 import type { Ingredient } from "~/services/ingredient";
 
 type CreateIngredient = Omit<Ingredient, 'id'>;
 
 export default component$(() => {
+  const navigate = useNavigate();
   const ingredient = useStore<CreateIngredient>({
     name: '',
     weights: [],
   });
-  const create = $(() => {
-    return add('ingredients', unwrapStore(ingredient));
+  const create = $(async () => {
+    await store('ingredient').add(unwrapStore(ingredient));
+    navigate('/');
   });
   return (
     <Form bind:value={ingredient} onSubmit$={create}>

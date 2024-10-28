@@ -1,0 +1,10 @@
+.section {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+.link {
+  background-color: var(--surface-1);
+  border-radius: 8px;
+  padding: 16px 8px;
+}

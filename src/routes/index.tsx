@@ -1,25 +1,29 @@
-import { component$ } from "@builder.io/qwik";
+import { component$, useStylesScoped$ } from "@builder.io/qwik";
 import type { DocumentHead } from "@builder.io/qwik-city";
+import { LinkItem, NavGrid } from "qwik-hueeye";
+import style from "./index.css?inline";
 
 export default component$(() => {
+  useStylesScoped$(style);
   return (
     <>
-      <h1>Hi 👋</h1>
-      <div>
-        Can't wait to see what you build with qwik!
-        <br />
-        Happy coding.
-      </div>
+      <section>
+        <h1>Mon livre de recettes</h1>
+      </section>
+      <NavGrid class="section">
+        <LinkItem class="link" href="/ingredient/list">Mes Ingrédients</LinkItem>
+        <LinkItem class="link" href="/recipe/list">Mes Recettes</LinkItem>
+      </NavGrid>
     </>
   );
 });
 
 export const head: DocumentHead = {
-  title: "Welcome to Qwik",
+  title: "Mon livre de recettes",
   meta: [
     {
       name: "description",
-      content: "Qwik site description",
+      content: "Livre de recettes and menus pour traiteur",
     },
   ],
 };

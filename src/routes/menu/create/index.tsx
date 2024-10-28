@@ -1,6 +1,6 @@
 import { component$, $, useStore, unwrapStore} from "@builder.io/qwik";
 import { Combobox, Form, FormField, Input, Label, Option } from "qwik-hueeye";
-import { useGetAllStore, add } from "~/services/db";
+import { useGetAllStore, store } from "~/services/db";
 import type { Ingredient } from "~/services/ingredient";
 import type { Menu } from "~/services/menu";
 import type { Recipe } from "~/services/recipe";
@@ -14,7 +14,7 @@ export default component$(() => {
     servings: 0,
     recipeIds: [],
   })
-  const handleSubmit = $(() => add("menu", unwrapStore(menu)));
+  const handleSubmit = $(() => store('menu').add(unwrapStore(menu)));
   return (
     <>
     <Form bind:value={menu} onSubmit$={handleSubmit}>
@@ -43,10 +43,10 @@ export default component$(() => {
   )
 })
 
-const formatNumber = new Intl.NumberFormat("", { maximumFractionDigits: 1})
+const formatNumber = new Intl.NumberFormat(undefined, { maximumFractionDigits: 1});
 
 const IngredientList = component$(({menu}: {menu : CreateMenu}) => {
-  const {list: ingredientsDB} = useGetAllStore("ingredients");
+  const {list: ingredientsDB} = useGetAllStore('ingredient');
   const {list: recipesDB} = useGetAllStore("recipe");
 
   const recordIngredients : Record<string, Ingredient>= {};

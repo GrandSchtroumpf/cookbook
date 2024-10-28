@@ -24,7 +24,8 @@
     "lint": "eslint \"src/**/*.ts*\"",
     "preview": "qwik build preview && vite preview --open",
     "start": "vite --open --mode ssr",
-    "qwik": "qwik"
+    "qwik": "qwik",
+    "analyze": "vite-bundle-visualizer"
   },
   "devDependencies": {
     "@builder.io/qwik": "https://pkg.pr.new/@builder.io/qwik@6960",
@@ -37,7 +38,7 @@
     "eslint-plugin-qwik": "^1.9.1",
     "idb": "^8.0.0",
     "prettier": "3.3.3",
-    "qwik-hueeye": "0.0.20",
+    "qwik-hueeye": "0.0.22",
     "typescript": "5.4.5",
     "undici": "*",
     "vite": "5.3.5",

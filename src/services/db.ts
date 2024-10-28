@@ -7,7 +7,7 @@ import { $, noSerialize, useSignal, useVisibleTask$ } from '@builder.io/qwik';
 import type { Menu } from './menu';
 
 interface DB extends DBSchema {
-  ingredients: {
+  ingredient: {
     key: number;
     value: Ingredient;
   };
@@ -24,7 +24,7 @@ interface DB extends DBSchema {
 export async function getDB() {
   return openDB<DB>('cookbook', 4, {
     upgrade: (db) => {
-      db.createObjectStore('ingredients', {
+      db.createObjectStore('ingredient', {
         keyPath: 'id',
         autoIncrement: true,
       });
@@ -65,11 +65,13 @@ class IDBChangeEvent<Name extends StoreNames<DB>> extends CustomEvent<StoreChang
 
 
 interface StoreKeyParams<Name extends StoreNames<DB>> {
-  name: Name;
   query?: StoreKey<DB, Name> | IDBKeyRange | null;
   count?: number;
 }
-function getStoreKey<Name extends StoreNames<DB>>(params: StoreKeyParams<Name>) {
+interface GetStoreKeyParams<Name extends StoreNames<DB>> extends StoreKeyParams<Name> {
+  name: Name;
+}
+function getStoreKey<Name extends StoreNames<DB>>(params: GetStoreKeyParams<Name>) {
   const search = new URLSearchParams();
   for (const [key, value] of Object.entries(params)) {
     if (value === null || value === undefined) continue;
@@ -95,64 +97,65 @@ const invalidate = $((changes: StoreChange<any>) => {
     if (typeof query !== 'object' && changes.key !== query) continue;
     delete cache[key]; 
   }
-})
-
-/** READ */
-export const get = $(async <Name extends StoreNames<DB>>(
-  name: Name,
-  query: StoreKey<DB, Name>
-) => {
-  const key = getStoreKey({ name, query });
-  if (cache[key]) return cache[key];
-  const db = await getIDB();
-  const result = await db.get(name, query);
-  cache[key] = result;
-  return result;
 });
 
-export const getAll = $(async <Name extends StoreNames<DB>>(
-  name: Name,
-  query?: StoreKey<DB, Name> | IDBKeyRange | null,
-  count?: number
-) => {
-  const key = getStoreKey({ name, query, count });
-  if (cache[key]) return cache[key];
-  const db = await getIDB();
-  const result = await db.getAll(name, query, count);
-  cache[key] = result;
-  return result;
-});
+export const store = <Name extends StoreNames<DB>>(name: Name) => {
+    
+  /** READ */
+  const get = $(async (
+    query: StoreKey<DB, Name>
+  ) => {
+    const key = getStoreKey({ name, query });
+    if (cache[key]) return cache[key];
+    const db = await getIDB();
+    const result = await db.get(name, query);
+    cache[key] = result;
+    return result;
+  });
 
-/** WRITE */
-export const add = $(async <Name extends StoreNames<DB>>(
-  name: Name,
-  value: Omit<StoreValue<DB, Name>, 'id'>,
-  key?: StoreKey<DB, Name> | IDBKeyRange
-) => {
-  const db = await getIDB();
-  const id = await db.add(name, value as StoreValue<DB, Name>, key);
-  const event = new IDBChangeEvent('add', name, value as StoreValue<DB, Name>, id);
-  await invalidate(event.detail);
-  db.dispatchEvent(event);
-  return id;
-});
+  const getAll = $(async (
+    query?: StoreKey<DB, Name> | IDBKeyRange | null,
+    count?: number
+  ) => {
+    const key = getStoreKey({ name, query, count });
+    if (cache[key]) return cache[key];
+    const db = await getIDB();
+    const result = await db.getAll(name, query, count);
+    cache[key] = result;
+    return result;
+  });
 
-/** LISTEN */
-export const listen = $(async <Name extends StoreNames<DB>>(
-  params: StoreKeyParams<Name>,
-  cb: (event: CustomEvent<StoreChange<Name>>) => void
-) => {
-  const key = getStoreKey(params);
-  listeners[key] ||= 0;
-  listeners[key]++;
-  const db = await getIDB();
-  db.addEventListener(changeEvent(params.name), cb as (event: Event) => void);
-  return async () => {
-    listeners[key]--;
-    db.removeEventListener(changeEvent(params.name), cb as (event: Event) => void);
-  }
-});
+  /** WRITE */
+  const add = $(async (
+    value: Omit<StoreValue<DB, Name>, 'id'>,
+    key?: StoreKey<DB, Name> | IDBKeyRange
+  ) => {
+    const db = await getIDB();
+    const id = await db.add(name, value as StoreValue<DB, Name>, key);
+    const event = new IDBChangeEvent('add', name, value as StoreValue<DB, Name>, id);
+    await invalidate(event.detail);
+    db.dispatchEvent(event);
+    return id;
+  });
 
+  /** LISTEN */
+  const listen = $(async (
+    params: StoreKeyParams<Name>,
+    cb: (event: CustomEvent<StoreChange<Name>>) => void
+  ) => {
+    const key = getStoreKey({ name, ...params });
+    listeners[key] ||= 0;
+    listeners[key]++;
+    const db = await getIDB();
+    db.addEventListener(changeEvent(name), cb as (event: Event) => void);
+    return async () => {
+      listeners[key]--;
+      db.removeEventListener(changeEvent(name), cb as (event: Event) => void);
+    }
+  });
+
+  return { get, getAll, add, listen };
+}
 
 export const useGetStore = <Name extends StoreNames<DB>>(
   name: Name,
@@ -164,7 +167,7 @@ export const useGetStore = <Name extends StoreNames<DB>>(
   const error = useSignal<string>();
   const update = $(async() => {
     try {
-      result.value = await get(name, query);
+      result.value = await store(name).get(query);
     } catch (err) {
       error.value = err as string;
     } finally {
@@ -174,7 +177,7 @@ export const useGetStore = <Name extends StoreNames<DB>>(
   // eslint-disable-next-line qwik/no-use-visible-task
   useVisibleTask$(async () => {
     update();
-    return listen({ name, query }, (event) => {
+    return store(name).listen({ query }, (event) => {
       if (event.detail.key === query) update();
     });
   });
@@ -193,7 +196,7 @@ export const useGetAllStore = <Name extends StoreNames<DB>>(
   const error = useSignal<string>();
   const update = $(async () => {
     try {
-      list.value = await getAll(name, _query, count);
+      list.value = await store(name).getAll(_query, count);
     } catch (err) {
       error.value = err as string;
     } finally {
@@ -203,7 +206,7 @@ export const useGetAllStore = <Name extends StoreNames<DB>>(
   // eslint-disable-next-line qwik/no-use-visible-task
   useVisibleTask$(async () => {
     update();
-    return listen({ name, query: _query, count }, (event) => {
+    return store(name).listen({ query: _query, count }, (event) => {
       const { key } = event.detail;
       if (!_query) return update();
       if (typeof _query === 'object' && _query.includes(key)) return update();

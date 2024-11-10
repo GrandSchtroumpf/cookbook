@@ -1,10 +1,11 @@
 import { openDB } from 'idb';
+import { $, noSerialize, useSignal, useVisibleTask$ } from '@builder.io/qwik';
 import type { DBSchema, IDBPDatabase, StoreKey, StoreNames, StoreValue } from 'idb';
 import type { Ingredient } from './ingredient';
 import type { Recipe } from './recipe';
 import type { NoSerialize} from '@builder.io/qwik';
-import { $, noSerialize, useSignal, useVisibleTask$ } from '@builder.io/qwik';
 import type { Menu } from './menu';
+import type { Shop } from './shop';
 
 interface DB extends DBSchema {
   ingredient: {
@@ -19,23 +20,29 @@ interface DB extends DBSchema {
     key: number;
     value: Menu;
   }
+  shop:{
+    key: number;
+    value: Shop;
+  }
 }
 
 export async function getDB() {
-  return openDB<DB>('cookbook', 4, {
+  return openDB<DB>('cookbook', 1, {
     upgrade: (db) => {
       db.createObjectStore('ingredient', {
         keyPath: 'id',
         autoIncrement: true,
       });
-    
       db.createObjectStore("recipe", {
         keyPath: "id",
         autoIncrement: true,
       });
-    
       db.createObjectStore("menu", {
         keyPath: "id",
+        autoIncrement: true,
+      });
+      db.createObjectStore('shop', {
+        keyPath: 'id',
         autoIncrement: true,
       });
     }

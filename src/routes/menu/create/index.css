@@ -1,0 +1,47 @@
+#create-menu {
+  display: grid;
+  gap: var(--size-3);
+  section {
+    display: grid;
+    gap: var(--size-2);
+    border-radius: var(--size-2);
+    background-color: var(--surface-1);
+    padding: var(--size-2);
+  }
+  
+  .group-list {
+    display: grid;
+    gap: var(--size-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .group-list:empty {
+    display: none;
+  }
+  .group-list > li:not(:first-child) {
+    display: grid;
+    gap: var(--size-1);
+    border-radius: var(--size-2);
+    background-color: var(--surface-2);
+    padding: var(--size-2);
+    animation: slideup 0.2s var(--ease-out);
+  }
+
+  .recipe-list {
+    display: grid;
+    gap: var(--size-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .recipe-list:empty {
+    display: none;
+  }
+  .recipe-list > li {
+    display: flex;
+    align-items: center;
+    gap: var(--size-1);
+    animation: slideup 0.2s var(--ease-out);
+  }
+}

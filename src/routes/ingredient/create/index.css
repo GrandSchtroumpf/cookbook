@@ -1,0 +1,38 @@
+#create-ingredient {
+  display: grid;
+  gap: var(--size-3);
+  section {
+    display: grid;
+    gap: var(--size-2);
+    padding: var(--size-2);
+    background-color: var(--surface-1);
+    border-radius: var(--size-2);
+  }
+  article {
+    display: grid;
+    gap: var(--size-1);
+    padding: var(--size-2);
+    background-color: var(--surface-2);
+    border-radius: var(--size-2);
+
+    header {
+      display: flex;
+      align-items: start;
+      justify-content: space-between;
+    }
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    th {
+      border-bottom: solid 1px var(--divider);
+    }
+    td > input {
+      width: 100%;
+    }
+  }
+  footer {
+    display: flex;
+    gap: var(--size-1);
+  }
+}

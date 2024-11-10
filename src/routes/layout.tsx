@@ -8,10 +8,9 @@ export default component$(() => {
     <>
       <header>
         <NavList aria-orientation="horizontal">
-          <LinkItem href="/ingredient/list">Ingrédient</LinkItem>
+          <LinkItem href="/shop/create">Ajouter un magasin</LinkItem>
           <LinkItem href="/ingredient/create">Crée ton ingrédient</LinkItem>
           <LinkItem href="/recipe/create">Crée ta recette</LinkItem>
-          <LinkItem href="/recipe/list">Recettes</LinkItem>
           <LinkItem href="/menu/create">Crée ton menu</LinkItem>
         </NavList>
       </header>

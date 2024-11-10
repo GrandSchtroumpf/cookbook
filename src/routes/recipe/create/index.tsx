@@ -1,10 +1,10 @@
 import type { QRL} from "@builder.io/qwik";
-import { component$, $, useStore, unwrapStore, useSignal, useStyles$ } from "@builder.io/qwik";
-import { Form, FormField, GroupController, Input, Label, ListController, Autocomplete, MatIcon, RemoveControl } from "qwik-hueeye";
+import { component$, $, useStore, unwrapStore, useSignal, useStyles$, useComputed$ } from "@builder.io/qwik";
+import { Form, FormField, GroupController, Input, Label, ListController, Autocomplete, MatIcon, RemoveControl, Textarea, AddControl, Field } from "qwik-hueeye";
 import { useGetAllStore, store } from "~/services/db";
 import type { Recipe } from "~/services/recipe";
-import style from './index.css?inline';
 import { useNavigate } from "@builder.io/qwik-city";
+import style from './index.css?inline';
 
 type CreateRecipe = Omit<Recipe, "id">;
 
@@ -14,7 +14,10 @@ export default component$(() => {
   const recipe = useStore<CreateRecipe>({
     name: "",
     ingredients: [],
+    steps: [],
     servings: 0,
+    duration: 0,
+    cooking: 0
   });
 
   const { list: ingredientList } = useGetAllStore('ingredient');
@@ -27,89 +30,146 @@ export default component$(() => {
   const selectIngredient = $((id: number) => recipe.ingredients.push({ id, amount: 0, label: "" }));
 
   return (
-    <Form class="form" bind:value={recipe} onSubmit$={create}>
-      <FormField>
-        <Label>Nom de la recette</Label>
-        <Input name="name" required class="fill" placeholder="Ratatouille"/>
-      </FormField>
+    <Form class="create-recipe" bind:value={recipe} onSubmit$={create}>
+      <section class="main-section">
+        <FormField>
+          <Label>Nom de la recette</Label>
+          <Input name="name" required class="fill" placeholder="Ratatouille"/>
+        </FormField>
 
-      <FormField>
-        <Label>Nombre de personnes</Label>
-        <Input type="number" name="servings" class="fill" required placeholder="4"/>
-      </FormField>
+        <FormField class="description">
+          <Label>Description</Label>  
+          <Textarea name="description" class="fill" placeholder="Recette à réaliser la veille"/>
+        </FormField>
+      </section>
 
-      <FormField>
-        <Label>Choisir un ingrédient</Label>
-        <SelectIngredient onSelect$={selectIngredient} />
-      </FormField>
+      <section class="aside-section">
+        <FormField>
+          <Label>Nombre de personnes</Label>
+          <Input type="number" name="servings" class="fill" required placeholder="4"/>
+        </FormField>
+        <FormField>
+          <Label>Temps de préparation</Label>
+          <Input type="number" name="duration" class="fill" required placeholder="4"/>
+        </FormField>
+        <FormField>
+          <Label>Temps de cuissin</Label>
+          <Input type="number" name="cooking" class="fill" placeholder="4"/>
+        </FormField>
+      </section>
 
-      <ListController name="ingredients">
-        <ul class="ingredient-list">
-          {recipe.ingredients.map((ingredient, i) => (
-            <li key={ingredient.id}>
-              <GroupController name={i}>
-                <header>
-                  <h4>{ingredientRecord[ingredient.id]?.name}</h4>
-                  <RemoveControl class="he-btn-icon" index={i}>
-                    <MatIcon name="delete" />
-                  </RemoveControl>
-                </header>
-                <FormField>
-                  <Label>Choisir une quantité</Label>
-                  <Input placeholder="1" type="number" class="fill" name="amount" required />
-                </FormField>
-              </GroupController>
-            </li>
-          ))}
-        </ul>
-      </ListController>
-      <button type="submit" class="he-btn primary">Créer la recette</button>
+      <section class="ingredient-section">
+        <h2>Ajouter les ingrédients de la recette</h2>
+        <FormField>
+          <Label>Choisir un ingrédient</Label>
+          <SelectIngredient selected={recipe.ingredients.map(({ id }) => id)} onSelect$={selectIngredient} />
+        </FormField>
+
+        <ListController name="ingredients">
+          <ul class="ingredient-list">
+            {recipe.ingredients.map((ingredient, i) => (
+              <li key={ingredient.id}>
+                <GroupController name={i}>
+                  <header>
+                    <h4>{ingredientRecord[ingredient.id]?.name}</h4>
+                    <RemoveControl class="he-btn icon" index={i}>
+                      <MatIcon name="delete" />
+                    </RemoveControl>
+                  </header>
+                  <FormField>
+                    <Label>Choisir une quantité</Label>
+                    <Field class="fill">
+                      <Input placeholder="1" type="number" name="amount" required />
+                      <span class="he-field-suffix unit-suffix">
+                        {ingredientRecord[ingredient.id].unit}
+                      </span>
+                    </Field>
+                  </FormField>
+                </GroupController>
+              </li>
+            ))}
+          </ul>
+        </ListController>
+      </section>
+
+      <section class="step-section">
+        <ListController name="steps">
+          <header>
+            <h2>Etapes de la recette</h2>
+            <AddControl class="he-btn primary" item="">
+              Ajouter une étape
+              <MatIcon name="add" />
+            </AddControl>
+          </header>
+          <ol class="step-list">
+            {recipe.steps.map((step, i) => (
+              <li key={i}>
+                <span class="index-indicator">{i + 1}</span>
+                <Textarea placeholder="Couper les légumes..." name={i} rows={1} required />
+                <RemoveControl class="he-btn icon" index={i}>
+                  <MatIcon name="delete" />
+                </RemoveControl>
+              </li>
+            ))}
+          </ol>
+          <AddControl class="he-btn primary" item="">
+            Ajouter une étape
+            <MatIcon name="add" />
+          </AddControl>
+        </ListController>
+      </section>
+
+
+      <footer>
+        <button type="submit" class="he-btn fill primary">Créer la recette</button>
+      </footer>
     </Form>
   );
 });
 
 
 interface Props {
+  selected: number[];
   onSelect$: QRL<(id: number) => void>
 }
-export const SelectIngredient = component$<Props>(({ onSelect$ }) => {
+export const SelectIngredient = component$<Props>(({ selected, onSelect$ }) => {
   const ref = useSignal<HTMLInputElement>();
   const panel = useSignal<HTMLDivElement>();
-  const { list, loading } = useGetAllStore('ingredient');
+  const { list } = useGetAllStore('ingredient');
 
+  const items = useComputed$(() => list.value.filter(({ id }) => !selected.includes(id)));
 
-  const select = $((id: number) => {
+  const select = $(async (id: number) => {
     panel.value?.hidePopover();
-    onSelect$(id);
+    await onSelect$(id);
     ref.value!.value = '';
+    ref.value!.focus();
   });
   
   const create = $(async () => {
     const input = ref.value!;
     const text = input.value.toLowerCase();
+    if (!text) return;
     const existing = list.value.find((ingredient) => ingredient.name === text);
     if (existing) return select(existing.id);
-    const id = await store('ingredient').add({ name: input.value, weights: [] });
+    const id = await store('ingredient').add({ name: input.value, weights: [], shops: {}, unit: 'g' });
     select(id);
   });
 
   return (
-    <Autocomplete.Root>
-      <Autocomplete.Input class="fill" ref={ref} placeholder="Aubergine" />
-      <button type="button" class="he-btn-icon he-field-suffix round" onClick$={create}>
+    <Autocomplete.Root class="outline">
+      <Autocomplete.Input  ref={ref} placeholder="Aubergine" />
+      <button type="button" class="he-btn icon he-field-suffix" onClick$={create}>
         <MatIcon name="add" />
       </button>
       <Autocomplete.Panel ref={panel} >
         <Autocomplete.Listbox>
-          {loading.value ? (
-            <Autocomplete.Option>Empty</Autocomplete.Option>
-          ) : (
-            list.value.map(({ id, name }) => (
-              <Autocomplete.Option key={id} onClick$={() => select(id)}>
-                {name}
-              </Autocomplete.Option>
-            ))
-          )}
+          {!items.value.length && <p>Cliquer sur "+" pour créer un ingrédient</p>}
+          {items.value.map(({ id, name }) => (
+            <Autocomplete.Option key={id} onClick$={() => select(id)}>
+              {name}
+            </Autocomplete.Option>
+          ))}
         </Autocomplete.Listbox>
       </Autocomplete.Panel>
     </Autocomplete.Root>

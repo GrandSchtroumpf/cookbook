@@ -1,3 +1,16 @@
 :root {
   --hue: 250;
 }
+@media (prefers-color-scheme: dark) {
+  :root {
+    --lum-0: 12%;
+    --lum-1: 20%;
+    --lum-2: 25%;
+    --lum-3: 30%;
+    --lum-4: 35%;
+  }
+}
+
+body {
+  background-color: var(--surface-0);
+}

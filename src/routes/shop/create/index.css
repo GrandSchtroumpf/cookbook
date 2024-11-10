@@ -1,0 +1,9 @@
+#create-shop {
+  display: grid;
+  gap: var(--size-3);
+
+  footer {
+    display: flex;
+    gap: var(--size-2);
+  }
+}

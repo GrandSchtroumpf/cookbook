@@ -1,38 +1,74 @@
-import { component$, $, useStore, unwrapStore} from "@builder.io/qwik";
-import { Combobox, Form, FormField, Input, Label, Option } from "qwik-hueeye";
+import type { QRL} from "@builder.io/qwik";
+import { component$, $, useStore, unwrapStore, useStyles$, useSignal } from "@builder.io/qwik";
+import { Autocomplete, Form, FormField, GroupController, Input, Label, ListController, MatIcon } from "qwik-hueeye";
 import { useGetAllStore, store } from "~/services/db";
-import type { Ingredient } from "~/services/ingredient";
 import type { Menu } from "~/services/menu";
-import type { Recipe } from "~/services/recipe";
+import { toRecord } from "~/services/utils";
+import styles from './index.css?inline';
 
 type CreateMenu = Omit<Menu, "id">;
 
 export default component$(() => {
+  useStyles$(styles);
   const {list} = useGetAllStore("recipe");
+  const recipeRecord = toRecord(list.value, 'id');
   const menu = useStore<CreateMenu>({
     name: "",
     servings: 0,
-    recipeIds: [],
+    groups: [],
+  });
+
+  const addRecipe = $((id: number) => {
+    if (!menu.groups.length) {
+      menu.groups.push({ name: '', recipeIds: [id] })
+    } else {
+      menu.groups[0].recipeIds.push(id);
+    }
   })
+
   const handleSubmit = $(() => store('menu').add(unwrapStore(menu)));
   return (
     <>
-    <Form bind:value={menu} onSubmit$={handleSubmit}>
-      <FormField>
-        <Label>Nom du menu</Label>
-        <Input type="text" name="name" required/>
-      </FormField>
-      <FormField>
-        <Label>Nombre de personnes</Label>
-        <Input type="number" name="servings" required/>
-      </FormField>
-      <FormField>
-        <Label>Composition du menu</Label>
-        <Combobox name="recipeIds" multi>
-          {list.value.map(({name, id}) => <Option key={id} value={id}>{name}</Option>)}
-        </Combobox>
-      </FormField>
-      <button class="he-btn-fill primary" type="submit">Enregistrer</button>
+    <Form id="create-menu" bind:value={menu} onSubmit$={handleSubmit}>
+      <section>
+        <FormField>
+          <Label>Nom du menu</Label>
+          <Input type="text" name="name" placeholder="Mariage de Jean & Marie" required/>
+        </FormField>
+        <FormField>
+          <Label>Nombre de personnes</Label>
+          <Input type="number" name="servings" placeholder="50" required/>
+        </FormField>
+      </section>
+      <section>
+        <h2>Composition du menu</h2>
+        <SelectRecipe onSelect$={addRecipe}/>
+        <ListController name="groups">
+          <ul class="group-list">
+            {!!menu.groups.length && <li id="menu-group-description">Grouper les recettes par nom</li>}
+            {menu.groups.map((group, i) => (
+              <li key={i}>
+                <GroupController name={i}>
+                  <Input name="name" placeholder="Diner" class="underline" aria-describedby="menu-group-description" />
+                  <ul class="recipe-list">
+                    {group.recipeIds.map((id, j) => (
+                      <li key={id}>
+                        <p>{recipeRecord[id].name}</p>
+                        <button type="button" class="he-btn icon" onClick$={() => group.recipeIds.splice(j, 1)}>
+                          <MatIcon name="delete" />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </GroupController>
+              </li> 
+            ))}
+          </ul>
+        </ListController>
+      </section>
+      <footer>
+        <button type="submit" class="he-btn fill primary">Enregistrer</button>
+      </footer>
     </Form>
 
     <section>
@@ -49,18 +85,13 @@ const IngredientList = component$(({menu}: {menu : CreateMenu}) => {
   const {list: ingredientsDB} = useGetAllStore('ingredient');
   const {list: recipesDB} = useGetAllStore("recipe");
 
-  const recordIngredients : Record<string, Ingredient>= {};
-  for (const ingredient of ingredientsDB.value) {
-    recordIngredients[ingredient.id] = ingredient;
-  }
+  const recordIngredients = toRecord(ingredientsDB.value, 'id');
+  const recordRecipes = toRecord(recipesDB.value, 'id');
 
-  const recordRecipes: Record<number, Recipe> = {};
-  for (const recipe of recipesDB.value) {
-    recordRecipes[recipe.id] = recipe;
-  }
 
   const result: Record<number, number> = {};
-  for (const recipeId of menu.recipeIds) {
+  const recipeIds = menu.groups.map((group) => group.recipeIds).flat();
+  for (const recipeId of recipeIds) {
     const recipe = recordRecipes[recipeId];
     const ingredients = recipe.ingredients;
     for (const ingredient of ingredients) {
@@ -79,3 +110,35 @@ const IngredientList = component$(({menu}: {menu : CreateMenu}) => {
   )
 });
 
+
+interface Props {
+  onSelect$: QRL<(id: number) => void>
+}
+export const SelectRecipe = component$<Props>(({ onSelect$ }) => {
+  const ref = useSignal<HTMLInputElement>();
+  const panel = useSignal<HTMLDivElement>();
+  const { list } = useGetAllStore('recipe');
+
+  const select = $(async (id: number) => {
+    panel.value?.hidePopover();
+    await onSelect$(id);
+    ref.value!.value = '';
+    ref.value!.focus();
+  });
+  
+  return (
+    <Autocomplete.Root class="outline">
+      <Autocomplete.Input  ref={ref} placeholder="Aubergine" />
+      <Autocomplete.Panel ref={panel} >
+        <Autocomplete.Listbox>
+          {!list.value.length && <p>Vous n'avez pas encore créé de recette</p>}
+          {list.value.map(({ id, name }) => (
+            <Autocomplete.Option key={id} onClick$={() => select(id)}>
+              {name}
+            </Autocomplete.Option>
+          ))}
+        </Autocomplete.Listbox>
+      </Autocomplete.Panel>
+    </Autocomplete.Root>
+  )
+})

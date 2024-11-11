@@ -10,7 +10,8 @@ type CreateIngredient = Omit<Ingredient, 'id'>;
 
 const units = {
   g: 'Gramme',
-  ml: 'Millilitre'
+  ml: 'Millilitre',
+  unit: 'Unité'
 }
 
 export default component$(() => {
@@ -31,7 +32,7 @@ export default component$(() => {
     navigate('/');
   });
 
-  const selectShop = $((shopId: number) => ingredient.shops[shopId] = [{ price: 0, weight: 0 }]);
+  const selectShop = $((shopId: number) => ingredient.shops[shopId] = [{ price: 0, amount: 0 }]);
 
   return (
     <Form id="create-ingredient" bind:value={ingredient} onSubmit$={create}>
@@ -49,6 +50,7 @@ export default component$(() => {
           <Select name="unit">
             <Option value="g">Gramme (g)</Option>
             <Option value="ml">Millilitre (ml)</Option>
+            <Option value="unit">Unité</Option>
           </Select>
         </FormField>
         <ListController name="weights">
@@ -91,7 +93,7 @@ interface WeightTableProps {
 const WeightTable = component$<WeightTableProps>(({ unit }) => {
   const { list } = useListControl();
   if (!list.value.length) return (
-    <AddControl class="he-btn primary" item={{ label: '', gram: 0 }}>
+    <AddControl class="he-btn primary" item={{ label: '', unit: 0 }}>
       Ajouter un type de poids
     </AddControl>
   );
@@ -102,7 +104,7 @@ const WeightTable = component$<WeightTableProps>(({ unit }) => {
           <th id="head-label">Label</th>
           <th id="head-unit">{units[unit]}</th>
           <th>
-          <AddControl class="he-btn icon tooltip primary" aria-description="Ajouter un poids" item={{ label: '', gram: 0 }}>
+          <AddControl class="he-btn icon tooltip primary" aria-description="Ajouter un poids" item={{ label: '', unit: 0 }}>
             <MatIcon name="add" />
           </AddControl>
           </th>
@@ -116,7 +118,7 @@ const WeightTable = component$<WeightTableProps>(({ unit }) => {
                 <Input name="label" placeholder="Cuillière à café" required aria-labelledby="head-label"/>
               </td>
               <td>
-                <Input name="gram" placeholder="10" type="number" min="0" required aria-labelledby="head-unit" />
+                <Input name="unit" placeholder="10" type="number" min="0" required aria-labelledby="head-unit" />
               </td>
               <td>
                 <RemoveControl index={i} class="he-btn icon">
@@ -167,7 +169,7 @@ const ShopAutocomplete = component$<Props>(({ selected, onSelect$ }) => {
       </button>
       <Autocomplete.Panel ref={panel}>
         <Autocomplete.Listbox>
-          {!items.value.length && <Autocomplete.Option>Il n'y pas pas encore de magasin</Autocomplete.Option>}
+          {!items.value.length && <Autocomplete.Option>Il n'y pas encore de magasin</Autocomplete.Option>}
           {items.value.map(({ id, name }) => (
             <Autocomplete.Option key={id} onClick$={() => select(id)}>{name}</Autocomplete.Option>
           ))}
@@ -184,7 +186,7 @@ const PriceTable = component$<PriceTableProps>(({ unit }) => {
   const { list } = useListControl();
 
   if (!list.value.length) return (
-    <AddControl class="he-btn primary" item={{ shopId: '', price: 0, weight: 0 }}>
+    <AddControl class="he-btn primary" item={{ shopId: '', price: 0, amount: 0 }}>
       Ajouter un prix
     </AddControl>
   );
@@ -195,7 +197,7 @@ const PriceTable = component$<PriceTableProps>(({ unit }) => {
           <th id="head-price">Prix (€)</th>
           <th id="head-amount">Quantité ({ unit })</th>
           <th>
-          <AddControl class="he-btn icon tooltip primary" aria-description="Ajouter un prix" item={{ shopId: '', price: 0, weight: 0 }}>
+          <AddControl class="he-btn icon tooltip primary" aria-description="Ajouter un prix" item={{ shopId: '', price: 0, amount: 0 }}>
             <MatIcon name="add" />
           </AddControl>
           </th>

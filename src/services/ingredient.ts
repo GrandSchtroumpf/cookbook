@@ -1,17 +1,17 @@
 export interface Weight {
   label: string;
-  gram: number;
+  unit: number;
 }
 
 export interface Price {
   price: number;
-  weight: number;
+  amount: number;
 }
 
 export interface Ingredient {
   id: number;
   name: string;
-  unit: 'g' | 'ml';
+  unit: 'g' | 'ml'| 'unit';
   weights: Weight[];
   shops: { [shopId: number]: Price[]};
 }

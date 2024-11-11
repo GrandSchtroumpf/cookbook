@@ -96,8 +96,14 @@ const IngredientList = component$(({menu}: {menu : CreateMenu}) => {
     const ingredients = recipe.ingredients;
     for (const ingredient of ingredients) {
       const multiplicator = menu.servings / recipe.servings;
+      const getAmount = () => {
+        if (!ingredient.label) return ingredient.amount;
+        const weight = recordIngredients[ingredient.id].weights.find((w) => w.label === ingredient.label);
+        if (!weight) throw new Error("Did not find weight label");
+        return weight.unit * ingredient.amount;
+      }
       result[ingredient.id] ||= 0;
-      result[ingredient.id] += ingredient.amount * multiplicator;
+      result[ingredient.id] += getAmount() * multiplicator;
     }
   }
 
@@ -105,7 +111,13 @@ const IngredientList = component$(({menu}: {menu : CreateMenu}) => {
 
   return (
     <ul>
-      {list.map(([id, amount]) => <li key={id}>{recordIngredients[id].name} x{formatNumber.format(amount)}</li>)}
+      {list.map(([id, amount]) => {
+        const ingredient = recordIngredients[id];
+        return (
+          <li key={id}>{ingredient.name}: {formatNumber.format(amount)}{ingredient.unit}</li>
+        )
+      }
+      )}
     </ul>
   )
 });

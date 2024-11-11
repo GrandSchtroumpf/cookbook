@@ -1,12 +1,19 @@
 import type { QRL} from "@builder.io/qwik";
 import { component$, $, useStore, unwrapStore, useSignal, useStyles$, useComputed$ } from "@builder.io/qwik";
-import { Form, FormField, GroupController, Input, Label, ListController, Autocomplete, MatIcon, RemoveControl, Textarea, AddControl, Field } from "qwik-hueeye";
+import { Form, FormField, GroupController, Input, Label, ListController, Autocomplete, MatIcon, RemoveControl, Textarea, AddControl, Field, Select, Option } from "qwik-hueeye";
 import { useGetAllStore, store } from "~/services/db";
 import type { Recipe } from "~/services/recipe";
 import { useNavigate } from "@builder.io/qwik-city";
 import style from './index.css?inline';
+import { Ingredient } from "~/services/ingredient";
 
 type CreateRecipe = Omit<Recipe, "id">;
+
+const units: Record<Ingredient['unit'], string> = {
+  g: 'g',
+  ml: 'ml',
+  unit: 'unité',
+}
 
 export default component$(() => {
   useStyles$(style);
@@ -67,27 +74,39 @@ export default component$(() => {
 
         <ListController name="ingredients">
           <ul class="ingredient-list">
-            {recipe.ingredients.map((ingredient, i) => (
-              <li key={ingredient.id}>
-                <GroupController name={i}>
-                  <header>
-                    <h4>{ingredientRecord[ingredient.id]?.name}</h4>
-                    <RemoveControl class="he-btn icon" index={i}>
-                      <MatIcon name="delete" />
-                    </RemoveControl>
-                  </header>
-                  <FormField>
-                    <Label>Choisir une quantité</Label>
-                    <Field class="fill">
-                      <Input placeholder="1" type="number" name="amount" required />
-                      <span class="he-field-suffix unit-suffix">
-                        {ingredientRecord[ingredient.id].unit}
-                      </span>
-                    </Field>
-                  </FormField>
-                </GroupController>
-              </li>
-            ))}
+            {recipe.ingredients.map((ingredient, i) => {
+              const { name, weights, unit } = ingredientRecord[ingredient.id];
+              return (
+                <li key={ingredient.id}>
+                  <GroupController name={i}>
+                    <header>
+                      <h4>{name}</h4>
+                      <RemoveControl class="he-btn icon" index={i}>
+                        <MatIcon name="delete" />
+                      </RemoveControl>
+                    </header>
+                    <FormField>
+                      <Label>Choisir une quantité</Label>
+                      <Field class="fill">
+                        <Input placeholder="1" type="number" name="amount" required />
+                        {!weights.length ? (
+                          <span class="he-field-suffix unit-suffix">
+                            {units[unit]}
+                          </span>
+                        ) : (
+                          <Select name="label" class="he-field-suffix unit-suffix">
+                            <Option value="">{units[unit]}</Option>
+                            {weights.map(({ label }) => (
+                              <Option key={label} value={label}>{label}</Option>
+                            ))}
+                          </Select>
+                        )}
+                      </Field>
+                    </FormField>
+                  </GroupController>
+                </li>
+              )
+            })}
           </ul>
         </ListController>
       </section>

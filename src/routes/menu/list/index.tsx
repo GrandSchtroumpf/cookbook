@@ -12,7 +12,7 @@ export default component$(() => {
     <main id="menu-list-page">
       <header>
         <h1>Mes Menus</h1>
-        <Link class="he-btn primary fill" href="/menu/create">Ajouter un ingrédient</Link>
+        <Link class="he-btn primary fill" href="/menu/create">Ajouter un menu</Link>
       </header>
       <NavGrid>
         {list.value!.map(({ id, name }) => (

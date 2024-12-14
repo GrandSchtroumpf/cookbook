@@ -84,6 +84,14 @@ export const ShoppingList = component$<Props>(({ recipes, ingredients: allIngred
       return acc + ingredient.shopPrices[shopId];
     }, 0);
   });
+  const perRecipe = useComputed$(() => {
+    if (!servings.value || recipes.length !== 1) return 0;
+    return total.value / recipes[0].servings;
+  });
+  const perServing = useComputed$(() => {
+    if (!servings.value) return 0;
+    return total.value / servings.value;
+  });
   return (
     <>
       <header class="price-header">
@@ -91,10 +99,11 @@ export const ShoppingList = component$<Props>(({ recipes, ingredients: allIngred
           <label class="he-field-prefix" for="estimated-serving">Nombre de personnes: </label>
           <Input id="estimated-serving" type="number" min="0" placeholder="6" bind:value={servings} />
         </Field>
-        <span class="total">
-          Total: <output
-          >{eur(total.value)}</output>
-        </span>
+        <div class="total">
+          <h3>Total: <output>{eur(total.value)}</output></h3>
+          <p hidden={!perRecipe.value}>Prix par recette: <output>{eur(perRecipe.value)}</output></p>
+          <p hidden={!perServing.value}>Prix par personne: <output>{eur(perServing.value)}</output></p>
+        </div>
       </header>
       <table class="price-table">
         <thead>

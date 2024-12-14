@@ -1,9 +1,8 @@
 .create-recipe {
   display: grid;
-  grid-template-columns: 60% 40%;
-  grid-template-rows: auto-flow;
   gap: var(--size-2);
 }
+
 .create-recipe > section {
   display: grid;
   gap: var(--size-2);
@@ -13,9 +12,7 @@
   padding: var(--size-2);
 }
 
-.ingredient-section, .step-section {
-  grid-column: 1 / span 2;
-}
+
 .ingredient-list:empty {
   height: 0;
 }
@@ -90,5 +87,17 @@
 
 .price-section {
   display: grid;
-  grid-column: 1 / 3;
+}
+
+/* DESKTOP */
+@media (min-width: 800px) {
+  .create-recipe {
+    grid-template-columns: 60% 40%;
+  }
+  .ingredient-section, .step-section {
+    grid-column: 1 / span 2;
+  }
+  .price-section {
+    grid-column: 1 / 3;
+  }
 }

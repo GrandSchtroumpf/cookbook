@@ -2,6 +2,8 @@
   display: flex;
   align-items: start;
   justify-content: space-between;
+  container-type: inline-size;
+  container-name: price-header;
 
   .servings {
     justify-self: start;
@@ -11,8 +13,12 @@
     }
   }
   .total {
-    font-size: 1.3rem;
     font-weight: 500;
+    display: grid;
+    gap: var(--size-0);
+    h3 {
+      font-size: 1.3rem;
+    }
     output{
       color: var(--primary);
     }
@@ -46,5 +52,17 @@
   }
   th, td{
     padding: var(--size-1);
+  }
+}
+
+@container price-header (width > 800px) {
+  .total {
+    text-align: end;
+  }
+}
+
+@container price-header (width < 800px) {
+  .price-header {
+    flex-direction: column;
   }
 }

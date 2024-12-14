@@ -44,7 +44,7 @@ export const head: DocumentHead = {
     },
     {
       name: "og:image",
-      content: '/recipe.jpg'
+      content: '/og-img.jpg'
     },
     {
       name: "og:image:width",

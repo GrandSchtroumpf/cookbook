@@ -40,7 +40,31 @@ export const head: DocumentHead = {
   meta: [
     {
       name: "description",
-      content: "Livre de recettes and menus pour traiteur",
+      content: "Livre de recettes & menus pour traiteur",
     },
+    {
+      name: 'og:local',
+      content: 'fr-FR'
+    },
+    {
+      name: "og:url",
+      content: 'https://cookbook-seven-chi.vercel.app/'
+    },
+    {
+      name: "og:description",
+      content: 'Livre de recettes & menus pour traiteur'
+    },
+    {
+      name: "og:image",
+      content: '/recipe.jpg'
+    },
+    {
+      name: "og:image:width",
+      content: '300'
+    },
+    {
+      name: "og:image:height",
+      content: '300'
+    }
   ],
 };

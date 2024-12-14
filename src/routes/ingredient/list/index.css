@@ -1,0 +1,9 @@
+#ingredient-list-page {
+  display: grid;
+  gap: var(--size-3);
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+}

@@ -6,3 +6,5 @@ export const toRecord = <T, K extends Extract<keyof T, string | number>>(list: T
   }
   return record;
 }
+
+export const createId = () => crypto.randomUUID() as string;

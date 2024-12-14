@@ -1,0 +1,50 @@
+.price-header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+
+  .servings {
+    justify-self: start;
+    align-items: center;
+    label {
+      padding: var(--size-1);
+    }
+  }
+  .total {
+    font-size: 1.3rem;
+    font-weight: 500;
+    output{
+      color: var(--primary);
+    }
+  }
+}
+.price-table {
+  border-collapse: collapse;
+  thead th {
+    border-bottom: solid 1px var(--divider);
+  }
+  tfoot th, tfoot td {
+    border-top: solid 1px var(--divider);
+  }
+  th:first-child {
+    text-align: start;
+  }
+  td {
+    text-align: center;
+    button {
+      border: 1px solid transparent;
+      background-color: transparent;
+      border-radius: var(--size-1);
+      padding: var(--size-0) var(--size-1);
+    }
+    button:hover {
+      background-color: color-mix(in oklab, var(--primary) 12%, transparent);
+    }
+    button[aria-checked="true"] {
+      border-color: var(--primary);
+    }
+  }
+  th, td{
+    padding: var(--size-1);
+  }
+}

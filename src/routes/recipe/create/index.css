@@ -30,24 +30,26 @@
   transition: height 0.2s var(--ease-out);
 }
 .ingredient-list > li {
+  display: grid;
   background-color: var(--surface-2);
   border-radius: var(--size-1);
   padding: var(--size-2);
   animation: slideup 0.2s var(--ease-out);
+  
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .unit-suffix {
+    place-self: center;
+    padding-inline: var(--size-1);
+  }
+  input {
+    min-width: 0;    
+  }
 }
-.ingredient-list > li header {
-  display: flex;
-  align-items: start;
-  justify-content: space-between;
-}
-.ingredient-list > li .unit-suffix {
-  place-self: center;
-  padding-inline: var(--size-1);
-}
-.step-section header {
-  display: flex;
-  justify-content: space-between;
-}
+
 .step-list {
   display: grid;
   gap: var(--size-2);
@@ -67,6 +69,7 @@
   align-items: center;
   gap: var(--size-1);
   animation: slideup 0.2s var(--ease-out);
+
 }
 .step-list > li .index-indicator {
   border-radius: 50%;
@@ -82,4 +85,10 @@
 }
 .step-list > li textarea {
   flex: 1;
+}
+
+
+.price-section {
+  display: grid;
+  grid-column: 1 / 3;
 }

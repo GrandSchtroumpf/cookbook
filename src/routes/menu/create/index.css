@@ -44,4 +44,8 @@
     gap: var(--size-1);
     animation: slideup 0.2s var(--ease-out);
   }
+  .shopping-list-section {
+    display: grid;
+    gap: var(--size-2);
+  }
 }

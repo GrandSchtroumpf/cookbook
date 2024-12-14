@@ -1,12 +1,11 @@
 import type { QRL } from "@builder.io/qwik";
-import { $, component$, useStore, unwrapStore, useStyles$, useSignal, useComputed$ } from "@builder.io/qwik";
-import { useNavigate } from "@builder.io/qwik-city";
-import { AddControl, Autocomplete, Form, FormField, GroupController, Input, Label, ListController, MatIcon, Option, RemoveControl, Select, useListControl } from 'qwik-hueeye';
+import { $, component$, useStore, unwrapStore, useStyles$, useSignal, useComputed$, useVisibleTask$ } from "@builder.io/qwik";
+import { useLocation, useNavigate } from "@builder.io/qwik-city";
+import { AddControl, Autocomplete, Form, FormField, GroupController, Input, Label, ListController, MatIcon, Option, RemoveControl, Select, resetForm, useListControl } from 'qwik-hueeye';
 import { store, useGetAllStore } from "~/services/db";
 import type { Ingredient } from "~/services/ingredient";
+import { createId } from "~/services/utils";
 import style from './index.css?inline';
-
-type CreateIngredient = Omit<Ingredient, 'id'>;
 
 const units = {
   g: 'Gramme',
@@ -16,74 +15,101 @@ const units = {
 
 export default component$(() => {
   useStyles$(style);
+  const initial = useSignal<Ingredient>();
   const navigate = useNavigate();
-  const ingredient = useStore<CreateIngredient>({
+  const ingredient = useStore<Ingredient>({
+    id: createId(),
     name: '',
     unit: 'g',
     weights: [],
     shops: {},
   });
+
+  const { url } = useLocation();
+  // eslint-disable-next-line qwik/no-use-visible-task
+  useVisibleTask$(async ({ track }) => {
+    const id = track(() => url.searchParams.get('id'));
+    if (!id) return;
+    initial.value = await store('ingredient').get(id);
+    if (initial.value) resetForm(ingredient, initial.value);
+  });
+
   const { list: shops } = useGetAllStore('shop');
 
   const shopName = useComputed$(() => Object.fromEntries(shops.value.map((s) => [s.id, s.name])));
 
-  const create = $(async () => {
-    await store('ingredient').add(unwrapStore(ingredient));
-    navigate('/');
+  const upsert = $(async () => {
+    if (initial.value) {
+      const oldWeights = initial.value.weights.filter((oldWeight) => {
+        return !ingredient.weights.some(({ label }) => label === oldWeight.label)
+      });
+      if (oldWeights.length) {
+        // TODO: find recipe with this ingredient. 
+        // const recipies = await store('recipe').getAll();
+        // for (const recipe of recipies) {
+        // }
+      }
+      await store('ingredient').put(unwrapStore(ingredient));
+    } else {
+      await store('ingredient').add(unwrapStore(ingredient));
+    }
+    navigate('/ingredient/list');
   });
 
-  const selectShop = $((shopId: number) => ingredient.shops[shopId] = [{ price: 0, amount: 0 }]);
+  const selectShop = $((shopId: string) => ingredient.shops[shopId] = [{ price: 0, amount: 0 }]);
 
   return (
-    <Form id="create-ingredient" bind:value={ingredient} onSubmit$={create}>
-      <section>
-        <FormField>
-          <Label>Name</Label>
-          <Input name="name" placeholder="Name" required class="fill"/>
-        </FormField>
-      </section>
+    <main>
+      <Form id="create-ingredient" bind:value={ingredient} onSubmit$={upsert}>
+        <section>
+          <FormField>
+            <Label>Name</Label>
+            <Input name="name" placeholder="Name" required class="fill"/>
+          </FormField>
+        </section>
 
-      <section>
-        <h2>Type de quantité</h2>
-        <FormField>
-          <Label>Reference de poids</Label>
-          <Select name="unit">
-            <Option value="g">Gramme (g)</Option>
-            <Option value="ml">Millilitre (ml)</Option>
-            <Option value="unit">Unité</Option>
-          </Select>
-        </FormField>
-        <ListController name="weights">
-          <WeightTable unit={ingredient.unit} />
-        </ListController>
-      </section>
+        <section>
+          <h2>Type de quantité</h2>
+          <FormField>
+            <Label>Reference de poids</Label>
+            <Select name="unit">
+              <Option value="g">Gramme (g)</Option>
+              <Option value="ml">Millilitre (ml)</Option>
+              <Option value="unit">Unité</Option>
+            </Select>
+          </FormField>
+          <ListController name="weights">
+            <WeightTable unit={ingredient.unit} />
+          </ListController>
+        </section>
 
-      <section class="shop-list">
-        <h2>Prix par magasin</h2>
-        <ShopAutocomplete  selected={Object.keys(ingredient)} onSelect$={selectShop} />
-        <GroupController name="shops">
-          {Object.keys(ingredient.shops).map((key) => (
-            <ListController key={key} name={key}>
-              <article>
-                <header>
-                  <h3>{shopName.value[key]}</h3>
-                  <button class="he-btn" onClick$={() => (delete ingredient.shops[+key])}>
-                    Retirer le magasin
-                  </button>
-                </header>
-                <PriceTable unit={ingredient.unit} />
-              </article>
-            </ListController>
-          ))}
-        </GroupController>
-      </section>
-      <footer>
-        <button type="reset" class="he-btn">Reset</button>
-        <button type="submit" class="he-btn fill primary">
-          Ajouter l'ingredient
-        </button>
-      </footer>
-    </Form>
+        <section class="shop-list">
+          <h2>Prix par magasin</h2>
+          <ShopAutocomplete  selected={Object.keys(ingredient)} onSelect$={selectShop} />
+          <GroupController name="shops">
+            {Object.keys(ingredient.shops).map((key) => (
+              <ListController key={key} name={key}>
+                <article>
+                  <header>
+                    <h3>{shopName.value[key]}</h3>
+                    <button class="he-btn" onClick$={() => (delete ingredient.shops[+key])}>
+                      Retirer le magasin
+                    </button>
+                  </header>
+                  <PriceTable unit={ingredient.unit} />
+                </article>
+              </ListController>
+            ))}
+          </GroupController>
+        </section>
+        <footer>
+          <button type="reset" class="he-btn">Reset</button>
+          <button type="submit" class="he-btn fill primary">
+            Enregistrer
+          </button>
+        </footer>
+      </Form>
+    </main>
   )
 });
 
@@ -118,7 +144,7 @@ const WeightTable = component$<WeightTableProps>(({ unit }) => {
                 <Input name="label" placeholder="Cuillière à café" required aria-labelledby="head-label"/>
               </td>
               <td>
-                <Input name="unit" placeholder="10" type="number" min="0" required aria-labelledby="head-unit" />
+                <Input name="unit" placeholder="10" type="number" min="0" step="any" required aria-labelledby="head-unit" />
               </td>
               <td>
                 <RemoveControl index={i} class="he-btn icon">
@@ -135,7 +161,7 @@ const WeightTable = component$<WeightTableProps>(({ unit }) => {
 
 interface Props {
   selected: string[];
-  onSelect$: QRL<(id: number) => void>
+  onSelect$: QRL<(id: string) => void>
 }
 const ShopAutocomplete = component$<Props>(({ selected, onSelect$ }) => {
   const ref = useSignal<HTMLInputElement>();
@@ -144,7 +170,7 @@ const ShopAutocomplete = component$<Props>(({ selected, onSelect$ }) => {
 
   const items = useComputed$(() => list.value.filter(({ id }) => !selected.includes(id.toString())));
 
-  const select = $(async (id: number) => {
+  const select = $(async (id: string) => {
     panel.value?.hidePopover();
     await onSelect$(id);
     ref.value!.value = '';
@@ -157,7 +183,7 @@ const ShopAutocomplete = component$<Props>(({ selected, onSelect$ }) => {
     if (!text) return;
     const existing = list.value.find((ingredient) => ingredient.name === text);
     if (existing) return select(existing.id);
-    const id = await store('shop').add({ name: input.value });
+    const id = await store('shop').add({ id: createId(), name: input.value });
     select(id);
   });
 
@@ -208,10 +234,10 @@ const PriceTable = component$<PriceTableProps>(({ unit }) => {
           <tr key={i}>
             <GroupController name={i}>
               <td>
-                <Input name="price" placeholder="10" type="number" min="0" required aria-labelledby="head-price" />
+                <Input name="price" placeholder="10" type="number" min="0" step="any" required aria-labelledby="head-price" />
               </td>
               <td>
-                <Input name="amount" placeholder="10" type="number" min="0" required aria-labelledby="head-amount" />
+                <Input name="amount" placeholder="10" type="number" min="0" step="any" required aria-labelledby="head-amount" />
               </td>
               <td>
                 <RemoveControl index={i} class="he-btn icon">

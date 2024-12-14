@@ -1,24 +1,35 @@
 import type { QRL} from "@builder.io/qwik";
-import { component$, $, useStore, unwrapStore, useStyles$, useSignal } from "@builder.io/qwik";
-import { Autocomplete, Form, FormField, GroupController, Input, Label, ListController, MatIcon } from "qwik-hueeye";
+import { component$, $, useStore, unwrapStore, useStyles$, useSignal, useVisibleTask$ } from "@builder.io/qwik";
+import { Autocomplete, Form, FormField, GroupController, Input, Label, ListController, MatIcon, resetForm } from "qwik-hueeye";
 import { useGetAllStore, store } from "~/services/db";
 import type { Menu } from "~/services/menu";
-import { toRecord } from "~/services/utils";
+import { createId, toRecord } from "~/services/utils";
+import { useLocation } from "@builder.io/qwik-city";
+import { ShoppingList } from "~/components/shopping-list";
 import styles from './index.css?inline';
-
-type CreateMenu = Omit<Menu, "id">;
 
 export default component$(() => {
   useStyles$(styles);
-  const {list} = useGetAllStore("recipe");
+  const { list } = useGetAllStore("recipe");
+  const { list: ingredients } = useGetAllStore('ingredient');
   const recipeRecord = toRecord(list.value, 'id');
-  const menu = useStore<CreateMenu>({
+  const menu = useStore<Menu>({
+    id: createId(),
     name: "",
     servings: 0,
     groups: [],
   });
+  
+  const { url } = useLocation();
+  // eslint-disable-next-line qwik/no-use-visible-task
+  useVisibleTask$(async ({ track }) => {
+    const id = track(() => url.searchParams.get('id'));
+    if (!id) return;
+    const result = await store('menu').get(id);
+    if (result) resetForm(menu, result);
+  });
 
-  const addRecipe = $((id: number) => {
+  const addRecipe = $((id: string) => {
     if (!menu.groups.length) {
       menu.groups.push({ name: '', recipeIds: [id] })
     } else {
@@ -26,112 +37,75 @@ export default component$(() => {
     }
   })
 
-  const handleSubmit = $(() => store('menu').add(unwrapStore(menu)));
+  const handleSubmit = $(() => {
+    const result = unwrapStore(menu);
+    store('menu').add({ ...result, id: createId() })
+  });
   return (
-    <>
-    <Form id="create-menu" bind:value={menu} onSubmit$={handleSubmit}>
-      <section>
-        <FormField>
-          <Label>Nom du menu</Label>
-          <Input type="text" name="name" placeholder="Mariage de Jean & Marie" required/>
-        </FormField>
-        <FormField>
-          <Label>Nombre de personnes</Label>
-          <Input type="number" name="servings" placeholder="50" required/>
-        </FormField>
-      </section>
-      <section>
-        <h2>Composition du menu</h2>
-        <SelectRecipe onSelect$={addRecipe}/>
-        <ListController name="groups">
-          <ul class="group-list">
-            {!!menu.groups.length && <li id="menu-group-description">Grouper les recettes par nom</li>}
-            {menu.groups.map((group, i) => (
-              <li key={i}>
-                <GroupController name={i}>
-                  <Input name="name" placeholder="Diner" class="underline" aria-describedby="menu-group-description" />
-                  <ul class="recipe-list">
-                    {group.recipeIds.map((id, j) => (
-                      <li key={id}>
-                        <p>{recipeRecord[id].name}</p>
-                        <button type="button" class="he-btn icon" onClick$={() => group.recipeIds.splice(j, 1)}>
-                          <MatIcon name="delete" />
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                </GroupController>
-              </li> 
-            ))}
-          </ul>
-        </ListController>
-      </section>
-      <footer>
-        <button type="submit" class="he-btn fill primary">Enregistrer</button>
-      </footer>
-    </Form>
+    <main id="create-menu">
+      <Form bind:value={menu} onSubmit$={handleSubmit}>
+        <section>
+          <FormField>
+            <Label>Nom du menu</Label>
+            <Input type="text" name="name" placeholder="Mariage de Jean & Marie" required/>
+          </FormField>
+          <FormField>
+            <Label>Nombre de personnes</Label>
+            <Input type="number" name="servings" placeholder="50" min="0" required/>
+          </FormField>
+        </section>
+        <section>
+          <h2>Composition du menu</h2>
+          <SelectRecipe onSelect$={addRecipe}/>
+          <ListController name="groups">
+            <ul class="group-list">
+              {!!menu.groups.length && <li id="menu-group-description">Grouper les recettes par nom</li>}
+              {menu.groups.map((group, i) => (
+                <li key={i}>
+                  <GroupController name={i}>
+                    <Input name="name" placeholder="Diner" class="underline" aria-describedby="menu-group-description" />
+                    <ul class="recipe-list">
+                      {group.recipeIds.map((id, j) => (
+                        <li key={id}>
+                          <p>{recipeRecord[id].name}</p>
+                          <button type="button" class="he-btn icon" onClick$={() => group.recipeIds.splice(j, 1)}>
+                            <MatIcon name="delete" />
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </GroupController>
+                </li> 
+              ))}
+            </ul>
+          </ListController>
+        </section>
+        <footer>
+          <button type="submit" class="he-btn fill primary">Enregistrer</button>
+        </footer>
+      </Form>
 
-    <section>
-      <h2>Liste des courses de ce menu</h2>
-      <IngredientList menu ={menu}/>
-    </section>
-    </>
+      <section class="shopping-list-section">
+        <h2>Liste des courses de ce menu</h2>
+        {/* <IngredientList menu={menu} /> */}
+        <ShoppingList
+          recipes={menu.groups.map((g) => g.recipeIds).flat().map((id) => recipeRecord[id])}
+          ingredients={ingredients.value}
+        />
+      </section>
+    </main>
   )
 })
 
-const formatNumber = new Intl.NumberFormat(undefined, { maximumFractionDigits: 1});
-
-const IngredientList = component$(({menu}: {menu : CreateMenu}) => {
-  const {list: ingredientsDB} = useGetAllStore('ingredient');
-  const {list: recipesDB} = useGetAllStore("recipe");
-
-  const recordIngredients = toRecord(ingredientsDB.value, 'id');
-  const recordRecipes = toRecord(recipesDB.value, 'id');
-
-
-  const result: Record<number, number> = {};
-  const recipeIds = menu.groups.map((group) => group.recipeIds).flat();
-  for (const recipeId of recipeIds) {
-    const recipe = recordRecipes[recipeId];
-    const ingredients = recipe.ingredients;
-    for (const ingredient of ingredients) {
-      const multiplicator = menu.servings / recipe.servings;
-      const getAmount = () => {
-        if (!ingredient.label) return ingredient.amount;
-        const weight = recordIngredients[ingredient.id].weights.find((w) => w.label === ingredient.label);
-        if (!weight) throw new Error("Did not find weight label");
-        return weight.unit * ingredient.amount;
-      }
-      result[ingredient.id] ||= 0;
-      result[ingredient.id] += getAmount() * multiplicator;
-    }
-  }
-
-  const list = Object.entries(result);
-
-  return (
-    <ul>
-      {list.map(([id, amount]) => {
-        const ingredient = recordIngredients[id];
-        return (
-          <li key={id}>{ingredient.name}: {formatNumber.format(amount)}{ingredient.unit}</li>
-        )
-      }
-      )}
-    </ul>
-  )
-});
-
-
 interface Props {
-  onSelect$: QRL<(id: number) => void>
+  onSelect$: QRL<(id: string) => void>
 }
 export const SelectRecipe = component$<Props>(({ onSelect$ }) => {
   const ref = useSignal<HTMLInputElement>();
   const panel = useSignal<HTMLDivElement>();
   const { list } = useGetAllStore('recipe');
 
-  const select = $(async (id: number) => {
+  const select = $(async (id: string) => {
     panel.value?.hidePopover();
     await onSelect$(id);
     ref.value!.value = '';

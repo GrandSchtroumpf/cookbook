@@ -6,17 +6,17 @@ import style from './index.css?inline';
 
 export default component$(() => {
   useStyles$(style);
-  const { list, loading } = useGetAllStore('recipe');
+  const { list, loading } = useGetAllStore('shop');
   if (loading.value) return;
   return (
-    <main id="recipe-list-page">
+    <main id="shop-list-page">
       <header>
-        <h1>Mes recettes</h1>
-        <Link class="he-btn primary fill" href="/recipe/create">Ajouter une Recette</Link>
+        <h1>Mes magasins préférés</h1>
+        <Link class="he-btn primary fill" href="/shop/create">Ajouter un ingrédient</Link>
       </header>
       <NavGrid>
         {list.value!.map(({ id, name }) => (
-          <LinkItem key={id} href="/recipe/create" search={`?id=${id}`}>
+          <LinkItem key={id} href="/shop/create" search={`?id=${id}`}>
             {name}
           </LinkItem>
         ))}

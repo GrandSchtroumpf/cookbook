@@ -29,5 +29,12 @@ export default function (opts: RenderToStreamOptions) {
     serverData: {
       ...opts.serverData,
     },
+    prefetchStrategy: {
+      implementation: {
+        linkInsert: 'html-append',
+        linkFetchPriority: 'high',
+        linkRel: 'modulepreload'
+      }
+    }
   });
 }

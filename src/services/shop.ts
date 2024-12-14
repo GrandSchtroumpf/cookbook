@@ -1,4 +1,4 @@
 export interface Shop {
-  id: number;
+  id: string;
   name: string;
 }

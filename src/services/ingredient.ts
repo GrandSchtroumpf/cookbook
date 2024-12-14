@@ -9,9 +9,9 @@ export interface Price {
 }
 
 export interface Ingredient {
-  id: number;
+  id: string;
   name: string;
   unit: 'g' | 'ml'| 'unit';
   weights: Weight[];
-  shops: { [shopId: number]: Price[]};
+  shops: { [shopId: string]: Price[]};
 }

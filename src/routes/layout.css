@@ -1,3 +1,5 @@
-.main {
+main {
   padding: var(--size-3);
+  max-width: 1920px;
+  margin-inline: auto;
 }

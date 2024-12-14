@@ -1,11 +1,11 @@
 export interface MenuGroup {
   name: string;
-  recipeIds: number[];
+  recipeIds: string[];
 }
 
 export interface Menu {
-  id: number,
-  name: string,
-  servings: number,
-  groups: MenuGroup[],
+  id: string;
+  name: string;
+  servings: number;
+  groups: MenuGroup[];
 }

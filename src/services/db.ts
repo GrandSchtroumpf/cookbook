@@ -1,6 +1,6 @@
 import { openDB } from 'idb';
 import { $, noSerialize, useSignal, useVisibleTask$ } from '@builder.io/qwik';
-import type { DBSchema, IDBPDatabase, StoreKey, StoreNames, StoreValue } from 'idb';
+import type { DBSchema, IDBPDatabase, IndexKey, IndexNames, StoreKey, StoreNames, StoreValue } from 'idb';
 import type { Ingredient } from './ingredient';
 import type { Recipe } from './recipe';
 import type { NoSerialize} from '@builder.io/qwik';
@@ -9,19 +9,19 @@ import type { Shop } from './shop';
 
 interface DB extends DBSchema {
   ingredient: {
-    key: number;
+    key: string;
     value: Ingredient;
   };
   recipe:{
-    key: number;
+    key: string;
     value: Recipe;
   };
   menu:{
-    key: number;
+    key: string;
     value: Menu;
   }
   shop:{
-    key: number;
+    key: string;
     value: Shop;
   }
 }
@@ -31,25 +31,19 @@ export async function getDB() {
     upgrade: (db) => {
       db.createObjectStore('ingredient', {
         keyPath: 'id',
-        autoIncrement: true,
       });
       db.createObjectStore("recipe", {
         keyPath: "id",
-        autoIncrement: true,
       });
       db.createObjectStore("menu", {
         keyPath: "id",
-        autoIncrement: true,
       });
       db.createObjectStore('shop', {
         keyPath: 'id',
-        autoIncrement: true,
       });
     }
   });
 }
-
-
 const changeEvent = (name: string) => `idb.${name}.change`;
 interface StoreChange<Name extends StoreNames<DB>> {
   storeName: Name;
@@ -72,11 +66,12 @@ class IDBChangeEvent<Name extends StoreNames<DB>> extends CustomEvent<StoreChang
 
 
 interface StoreKeyParams<Name extends StoreNames<DB>> {
-  query?: StoreKey<DB, Name> | IDBKeyRange | null;
+  query?: StoreKey<DB, Name> | IDBKeyRange | null | IndexKey<DB, Name, IndexNames<DB, Name>>;
   count?: number;
 }
 interface GetStoreKeyParams<Name extends StoreNames<DB>> extends StoreKeyParams<Name> {
   name: Name;
+  indexName?: IndexNames<DB, Name>;
 }
 function getStoreKey<Name extends StoreNames<DB>>(params: GetStoreKeyParams<Name>) {
   const search = new URLSearchParams();
@@ -111,7 +106,7 @@ export const store = <Name extends StoreNames<DB>>(name: Name) => {
   /** READ */
   const get = $(async (
     query: StoreKey<DB, Name>
-  ) => {
+  ): Promise<DB[Name]["value"] | undefined> => {
     const key = getStoreKey({ name, query });
     if (cache[key]) return cache[key];
     const db = await getIDB();
@@ -123,7 +118,7 @@ export const store = <Name extends StoreNames<DB>>(name: Name) => {
   const getAll = $(async (
     query?: StoreKey<DB, Name> | IDBKeyRange | null,
     count?: number
-  ) => {
+  ): Promise<DB[Name]["value"][]> => {
     const key = getStoreKey({ name, query, count });
     if (cache[key]) return cache[key];
     const db = await getIDB();
@@ -132,9 +127,35 @@ export const store = <Name extends StoreNames<DB>>(name: Name) => {
     return result;
   });
 
+  const getFromIndex = $(async function<IndexName extends IndexNames<DB, Name>>(
+    indexName: IndexName,
+    query: IndexKey<DB, Name, IndexName> | IDBKeyRange,
+  ): Promise<DB[Name]["value"] | undefined> {
+    const key = getStoreKey({ name, query, indexName });
+    if (cache[key]) return cache[key];
+    const db = await getIDB();
+    const result = await db.getFromIndex(name, indexName, query);
+    cache[key] = result;
+    return result;
+  });
+
+  
+  const getAllFromIndex = $(async function<IndexName extends IndexNames<DB, Name>>(
+    indexName: IndexName,
+    query: IndexKey<DB, Name, IndexName> | IDBKeyRange,
+    count?: number
+  ): Promise<DB[Name]["value"][]> {
+    const key = getStoreKey({ name, query, indexName, count });
+    if (cache[key]) return cache[key];
+    const db = await getIDB();
+    const result = await db.getAllFromIndex(name, indexName, query, count);
+    cache[key] = result;
+    return result;
+  });
+
   /** WRITE */
   const add = $(async (
-    value: Omit<StoreValue<DB, Name>, 'id'>,
+    value: StoreValue<DB, Name>,
     key?: StoreKey<DB, Name> | IDBKeyRange
   ) => {
     const db = await getIDB();
@@ -142,6 +163,32 @@ export const store = <Name extends StoreNames<DB>>(name: Name) => {
     const event = new IDBChangeEvent('add', name, value as StoreValue<DB, Name>, id);
     await invalidate(event.detail);
     db.dispatchEvent(event);
+    return id;
+  });
+
+  const put = $(async (
+    value: StoreValue<DB, Name>,
+    key?: StoreKey<DB, Name> | IDBKeyRange
+  ) => {
+    const db = await getIDB();
+    const id = await db.put(name, value as StoreValue<DB, Name>, key);
+    const event = new IDBChangeEvent('add', name, value as StoreValue<DB, Name>, id);
+    await invalidate(event.detail);
+    db.dispatchEvent(event);
+    return id;
+  });
+
+  // TODO: Use a transaction
+  const update = $(async (
+    key: StoreKey<DB, Name>,
+    cb: (current?: StoreValue<DB, Name>) => StoreValue<DB, Name> | Promise<StoreValue<DB, Name>>
+  ) => {
+    const db = await getDB();
+    const tx = db.transaction(name, 'readwrite');
+    tx.store.get(key);
+    const current = await get(key);
+    const value = await cb(current);
+    const id = current ? await put(value, key) : await add(value, key);
     return id;
   });
 
@@ -161,20 +208,21 @@ export const store = <Name extends StoreNames<DB>>(name: Name) => {
     }
   });
 
-  return { get, getAll, add, listen };
+  return { get, getAll, getFromIndex, getAllFromIndex, add, put, update, listen };
 }
 
 export const useGetStore = <Name extends StoreNames<DB>>(
   name: Name,
-  query: StoreKey<DB, Name>
+  query?: StoreKey<DB, Name> | null
 ) => {
   const init = cache[getStoreKey({ name, query })];
   const loading = useSignal(!init);
-  const result = useSignal<StoreValue<DB, Name>>(init);
+  const result = useSignal<StoreValue<DB, Name> | undefined>(init);
   const error = useSignal<string>();
   const update = $(async() => {
     try {
-      result.value = await store(name).get(query);
+      if (!query) result.value = undefined;
+      else result.value = await store(name).get(query);
     } catch (err) {
       error.value = err as string;
     } finally {

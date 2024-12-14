@@ -1,5 +1,4 @@
 import { component$, useStyles$ } from "@builder.io/qwik";
-import { type DocumentHead } from "@builder.io/qwik-city";
 import { LinkItem, NavGrid } from "qwik-hueeye";
 import HomepageImg from '~/assets/homepage.jpg?jsx';
 import IngredientImg from '~/assets/ingredient.jpg?w=300&h=300&jsx';
@@ -34,37 +33,3 @@ export default component$(() => {
     </>
   );
 });
-
-export const head: DocumentHead = {
-  title: "Mon livre de recettes",
-  meta: [
-    {
-      name: "description",
-      content: "Livre de recettes & menus pour traiteur",
-    },
-    {
-      name: 'og:local',
-      content: 'fr-FR'
-    },
-    {
-      name: "og:url",
-      content: 'https://cookbook-seven-chi.vercel.app/'
-    },
-    {
-      name: "og:description",
-      content: 'Livre de recettes & menus pour traiteur'
-    },
-    {
-      name: "og:image",
-      content: '/recipe.jpg'
-    },
-    {
-      name: "og:image:width",
-      content: '300'
-    },
-    {
-      name: "og:image:height",
-      content: '300'
-    }
-  ],
-};

@@ -1,6 +1,7 @@
 import { component$, Slot, useStyles$ } from "@builder.io/qwik";
 import { LinkItem, MatIcon, NavList } from "qwik-hueeye";
 import style from './layout.css?inline';
+import { DocumentHead } from "@builder.io/qwik-city";
 
 export default component$(() => {
   useStyles$(style);
@@ -21,3 +22,37 @@ export default component$(() => {
     </>
   );
 });
+
+export const head: DocumentHead = {
+  title: "Mon livre de recettes",
+  meta: [
+    {
+      name: "description",
+      content: "Livre de recettes & menus pour traiteur",
+    },
+    {
+      name: 'og:local',
+      content: 'fr-FR'
+    },
+    {
+      name: "og:url",
+      content: 'https://cookbook-seven-chi.vercel.app/'
+    },
+    {
+      name: "og:description",
+      content: 'Livre de recettes & menus pour traiteur'
+    },
+    {
+      name: "og:image",
+      content: '/recipe.jpg'
+    },
+    {
+      name: "og:image:width",
+      content: '300'
+    },
+    {
+      name: "og:image:height",
+      content: '300'
+    }
+  ],
+};

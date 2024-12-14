@@ -1,5 +1,5 @@
 {
-  "name": "my-qwik-empty-starter",
+  "name": "cookbook",
   "description": "Blank project with routing included",
   "engines": {
     "node": "^20.3.0 || >=21.0.0"
@@ -12,9 +12,11 @@
   "trustedDependencies-annotation": "Needed for bun to allow running install scripts",
   "type": "module",
   "scripts": {
+    "analyze": "vite-bundle-visualizer",
     "build": "qwik build",
     "build.client": "vite build",
     "build.preview": "vite build --ssr src/entry.preview.tsx",
+    "build.server": "vite build -c adapters/static/vite.config.ts",
     "build.types": "tsc --incremental --noEmit",
     "deploy": "echo 'Run \"npm run qwik add\" to install a server adapter'",
     "dev": "vite --mode ssr",
@@ -24,18 +26,17 @@
     "lint": "eslint \"src/**/*.ts*\"",
     "preview": "qwik build preview && vite preview --open",
     "start": "vite --open --mode ssr",
-    "qwik": "qwik",
-    "analyze": "vite-bundle-visualizer"
+    "qwik": "qwik"
   },
   "devDependencies": {
-    "@builder.io/qwik": "1.10.0",
-    "@builder.io/qwik-city": "1.10.0",
+    "@builder.io/qwik": "1.11.0",
+    "@builder.io/qwik-city": "1.11.0",
     "@types/eslint": "8.56.10",
     "@types/node": "20.14.11",
     "@typescript-eslint/eslint-plugin": "7.16.1",
     "@typescript-eslint/parser": "7.16.1",
     "eslint": "8.57.0",
-    "eslint-plugin-qwik": "1.10.0",
+    "eslint-plugin-qwik": "1.11.0",
     "idb": "^8.0.0",
     "lightningcss": "^1.27.0",
     "prettier": "3.3.3",
